@@ -6,7 +6,6 @@ defmodule MobupayWeb.Plugs.ValidateRequestMsisdn do
   def init(default), do: default
 
   def call(%Plug.Conn{params: %{"country" => _country, "msisdn" => msisdn}} = conn, _default) do
-
     IO.inspect(msisdn, label: "Called from plug")
 
     conn

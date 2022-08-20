@@ -2,9 +2,6 @@ defmodule Mobupay.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def change do
-    Mobupay.TransactionTypeEnum.create_type()
-    Mobupay.TransactionStatusEnum.create_type()
-
     create table(:users) do
       add :email, :string
       add :msisdn, :string, null: false

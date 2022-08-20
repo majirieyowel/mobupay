@@ -48,14 +48,14 @@ export default {
   methods: {
     async add_email() {
       try {
-        const response = await this.$axios.$post("user/add-email", this.form);
+        await this.$axios.$post("user/add-email", this.form);
 
         this.$store.commit("addEmail", this.form.email);
 
         this.$toast.success("Email added succcessfully!");
 
         this.$router.push({
-          name: "dashboard-send",
+          name: "dashboard-funding-options",
           params: { dashboard: this.$auth.$state.user.msisdn },
         });
       } catch (error) {

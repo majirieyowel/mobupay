@@ -9,7 +9,7 @@ defmodule Mobupay.Helpers.Token do
 
   @otp_length 4
 
-  @random_length 30
+  @random_length 25
 
   @user_ref_length 10
 

@@ -16,5 +16,8 @@ defmodule Mobupay.Repo.Migrations.CreateCardsTable do
 
       timestamps()
     end
+
+    create(index(:cards, [:user_id]))
+    create unique_index(:cards, :ref)
   end
 end

@@ -26,7 +26,7 @@ defmodule Mobupay.Services.Paystack do
         reference: reference,
         currency: "NGN",
         # ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer", "eft"]
-        channels: ["card", "bank"]
+        channels: ["card"]
       }
       |> Jason.encode!()
 
@@ -58,14 +58,12 @@ defmodule Mobupay.Services.Paystack do
   end
 
   @spec charge_authorization(map()) :: {:ok, map()} | {:error, any()}
-  def charge_authorization(
-        %{
-          email: email,
-          amount: amount,
-          authcode: authcode,
-          reference: reference
-        }
-      ) do
+  def charge_authorization(%{
+        email: email,
+        amount: amount,
+        authcode: authcode,
+        reference: reference
+      }) do
     base_url = System.get_env("PAYSTACK_BASE_URL")
     endpoint = "#{base_url}transaction/charge_authorization"
     secret_key = System.get_env("PAYSTACK_SECRET_KEY")

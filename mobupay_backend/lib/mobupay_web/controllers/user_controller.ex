@@ -49,4 +49,14 @@ defmodule MobupayWeb.UserController do
         |> Response.error(500, "Unable to save email at this time.")
     end
   end
+
+  def verify_password(
+        %Plug.Conn{assigns: %{current_user: %{hashed_password: hashed_password}}} = conn,
+        %{"password" => password}
+      ) do
+    conn
+    |> Response.ok(%{
+      "allow" => Bcrypt.verify_pass(password, hashed_password)
+    })
+  end
 end

@@ -53,7 +53,8 @@ defmodule Mobupay.MixProject do
       {:cors_plug, "~> 3.0"},
       {:guardian, "~> 2.2.1"},
       {:timex, "~> 3.0"},
-      {:scrivener_ecto, "~> 2.0"}
+      {:scrivener_ecto, "~> 2.0"},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 

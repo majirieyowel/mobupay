@@ -11,7 +11,7 @@
 
     <NuxtLink
       :to="{
-        name: 'dashboard-send',
+        name: 'dashboard-funding-options',
         params: { dashboard: $auth.$state.user.msisdn },
       }"
       >Send</NuxtLink
@@ -28,6 +28,15 @@
     <br />
 
     <ul>
+      <li>
+        <NuxtLink
+          :to="{
+            name: 'dashboard-contacts',
+            params: { dashboard: $auth.$state.user.msisdn },
+          }"
+          >Invoice</NuxtLink
+        >
+      </li>
       <li>
         <NuxtLink
           :to="{
@@ -79,27 +88,102 @@
     <br />
     <hr />
     <br />
-    <p>Transactions:</p>
+    <p>Transactions: <span @click="refresh_transactions">Refresh</span></p>
 
     <v-simple-table height="300px">
       <template v-slot:default>
         <thead>
           <tr>
             <th class="text-left">Type</th>
-            <th class="text-left">Amount</th>
             <th class="text-left">Status</th>
+            <th class="text-left">Sender</th>
+            <th class="text-left">Receiver</th>
+            <th class="text-left">Amount</th>
+
             <th class="text-left">Reference</th>
-            <th class="text-left">Date</th>
+            <th class="text-left">Date&nbsp;Created</th>
+            <th class="text-left">Action</th>
           </tr>
         </thead>
-        <tbody>
-          <tr></tr>
+        <tbody v-if="transactions.length">
           <tr v-for="item in transactions" :key="item.ref">
-            <td>{{ item.type }}</td>
-            <td>{{ item.amount | format_money }}</td>
+            <td>
+              {{
+                $auth.$state.user.msisdn == item.to_msisdn ? "credit" : "debit"
+              }}
+            </td>
             <td>{{ item.status }}</td>
-            <td>{{ item.ref }}</td>
+            <td>
+              {{
+                $auth.$state.user.msisdn == item.from_msisdn
+                  ? "You"
+                  : item.from_msisdn
+              }}
+            </td>
+            <td>
+              {{
+                $auth.$state.user.msisdn == item.to_msisdn
+                  ? "You"
+                  : remove_wait(item.to_msisdn)
+              }}
+            </td>
+            <td>
+              {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-"
+              }}{{ item.amount | format_money }}
+            </td>
+
+            <td>
+              {{
+                $auth.$state.user.msisdn == item.from_msisdn
+                  ? item.from_ref
+                  : item.to_ref
+              }}
+            </td>
             <td>{{ $moment(item.inserted_at).calendar() }}</td>
+            <td>
+              <v-btn
+                :loading="item.refuse_loading"
+                v-if="
+                  item.status === 'floating' &&
+                  $auth.$state.user.msisdn == item.to_msisdn
+                "
+                @click="handle(item.ref, 'refuse')"
+                outlined
+                x-small
+                color="error"
+                >Refuse</v-btn
+              >
+              <v-btn
+                v-if="
+                  item.status === 'floating' &&
+                  $auth.$state.user.msisdn == item.to_msisdn
+                "
+                :loading="item.accept_loading"
+                @click="handle(item.ref, 'accept')"
+                outlined
+                x-small
+                color="success"
+                >Accept</v-btn
+              >
+
+              <v-btn
+                :loading="item.reclaim_loading"
+                @click="confirmReclaim(item.ref)"
+                v-if="
+                  item.status === 'floating' &&
+                  $auth.$state.user.msisdn == item.from_msisdn
+                "
+                color="primary"
+                outlined
+                x-small
+                >Reclaim</v-btn
+              >
+            </td>
+          </tr>
+        </tbody>
+        <tbody v-else>
+          <tr>
+            <td style="text-align: center" colspan="8">No Transactions</td>
           </tr>
         </tbody>
       </template>
@@ -108,28 +192,101 @@
     <br />
     <br />
     <button @click="$auth.logout()">Logout</button>
+
+    <Confirm
+      :show="showConfirmReclaimUI"
+      instruction="Are you sure you want to reclaim you funds? This will come with a charge of 2%"
+      title="Reclaim Transaction"
+      :param="reclaimRef"
+      @yes="reclaim"
+      @no="showConfirmReclaimUI = false"
+    />
   </div>
 </template>
 
 <script>
+import { throws } from "assert";
 import { mapGetters } from "vuex";
 
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "dashboard",
-  data: () => ({}),
+  data: () => ({
+    showConfirmReclaimUI: false,
+    reclaimRef: "",
+  }),
   computed: mapGetters(["transactions"]),
-  // async fetch() {
-  //   // let transactions = await this.$axios.$get("/transaction");
-  //   // this.$store.commit("pushTransactions", transactions.data.transactions);
-  // },
+
   methods: {
+    refresh_transactions() {
+      this.load();
+    },
+    remove_wait(string) {
+      return string.startsWith("wait_") ? string.split("_")[1] : string;
+    },
     async load() {
       let transactions = await this.$axios.$get("/transaction");
+
+      transactions.data.transactions.forEach((i) => {
+        i.accept_loading = false;
+        i.refuse_loading = false;
+        i.reclaim_loading = false;
+      });
       this.$store.commit("pushTransactions", transactions.data.transactions);
     },
+
+    confirmReclaim(ref) {
+      this.reclaimRef = ref;
+      this.showConfirmReclaimUI = true;
+    },
+
+    reclaim(ref) {
+      this.showConfirmReclaimUI = false;
+      this.handle(ref, "reclaim");
+    },
+
+    /**
+     * Handles a floating transaction
+     *
+     * @param {String} ref The transaction reference
+     * @param {String} type The action to handle
+     */
+    async handle(ref, type) {
+      this.transactionButtonLoader(true, ref, type);
+      try {
+        const response = await this.$axios.$post(`/transfer/${type}/${ref}`);
+        this.transactionButtonLoader(false, ref, type);
+        this.$store.commit("updateBalance", response.data.new_balance);
+        this.$store.commit(
+          "updateTransactionStatus",
+          response.data.transaction
+        );
+      } catch (error) {
+        this.transactionButtonLoader(false, ref, type);
+        if (error.response.status == 400) {
+          this.$toast.error(error.response.data.message);
+        } else if (error.response.status == 500) {
+          console.log(error);
+        }
+      }
+    },
+
+    /**
+     * Manages the loading state of transaction buttons
+     *
+     * @param {Boolean} status
+     * @param {String} ref The transaction reference
+     * @param {String} producer The caller function
+     * @return void
+     */
+    transactionButtonLoader(status, ref, producer) {
+      this.$store.commit("transactionButtonLoadingStatus", {
+        status,
+        ref,
+        producer,
+      });
+    },
   },
-  // fetchOnServer: false,
   mounted() {
     this.load();
   },

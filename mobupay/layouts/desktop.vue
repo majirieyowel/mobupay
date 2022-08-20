@@ -1,7 +1,7 @@
 <template>
-  <v-app dark>
+  <v-app>
     <v-container>
-        <p>Desktop Layout</p>
+      <p>Desktop Layout</p>
       <Nuxt />
     </v-container>
   </v-app>

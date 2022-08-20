@@ -14,5 +14,7 @@ defmodule Mobupay.Repo.Migrations.CreateContactsTable do
     end
 
     create(index(:contacts, [:user_id]))
+
+    create unique_index(:contacts, :ref)
   end
 end

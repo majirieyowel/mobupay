@@ -9,6 +9,7 @@ defmodule MobupayWeb.TransactionController do
 
   require Logger
 
+  # Matches request with no email address present in the payload
   def self_initiate(
         %Plug.Conn{
           assigns: %{current_user: %Mobupay.Account.User{email: email}}
@@ -23,6 +24,7 @@ defmodule MobupayWeb.TransactionController do
     )
   end
 
+  # Handles card transactions
   def self_initiate(
         %Plug.Conn{
           assigns: %{
@@ -94,6 +96,7 @@ defmodule MobupayWeb.TransactionController do
     end
   end
 
+  # Handles requests with no card
   def self_initiate(
         %Plug.Conn{
           assigns: %{
@@ -142,12 +145,13 @@ defmodule MobupayWeb.TransactionController do
     end
   end
 
+  # Handles requests with invalid params
   def self_initiate(conn, _params) do
     conn
     |> Response.error(400, "Invalid/missing parameters")
   end
 
-  def self_initiate_callback_url(msisdn, hash) do
+  defp self_initiate_callback_url(msisdn, hash) do
     System.get_env("MOBUPAY_FRONTEND_URL") <> "#{msisdn}/send/self-funding?consolidator=#{hash}"
   end
 
@@ -210,6 +214,14 @@ defmodule MobupayWeb.TransactionController do
     end
   end
 
+  def phone_number(conn, params) do
+    Logger.info("Received request for phone number transfer with params #{inspect(params)}")
+
+    conn
+    |> Response.ok()
+  end
+
+  # List user transactions
   def transactions(
         %Plug.Conn{
           assigns: %{current_user: %Mobupay.Account.User{} = user}

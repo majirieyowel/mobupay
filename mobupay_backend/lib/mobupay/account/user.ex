@@ -57,8 +57,8 @@ defmodule Mobupay.Account.User do
 
   defp validate_required_onboarding(changeset) do
     changeset
-    |> validate_required([:msisdn], message: "Phone number is required!")
-    |> validate_required([:country], message: "Country code is required!")
+    |> validate_required(:msisdn, message: "Phone number is required!")
+    |> validate_required(:country, message: "Country code is required!")
   end
 
   defp encrypt_and_put_password(changeset) do

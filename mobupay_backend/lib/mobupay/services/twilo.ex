@@ -4,6 +4,30 @@ defmodule Mobupay.Services.Twilio do
   require Logger
 
   @doc """
+  Lookup an MSISDN on Twilio
+
+  """
+  @spec lookup(String.t()) :: {:ok, any()} | {:error, any()}
+  def lookup(msisdn) do
+    twilio_lookup_url = System.get_env("TWILIO_LOOKUP_URL")
+    twilio_sid = System.get_env("TWILIO_SID")
+    twilio_auth_token = System.get_env("TWILIO_AUTH_TOKEN")
+
+    authorization_token = "#{twilio_sid}:#{twilio_auth_token}" |> :base64.encode()
+
+    endpoint = "#{twilio_lookup_url}v1/PhoneNumbers/#{msisdn}"
+
+    headers = [
+      Authorization: "Basic #{authorization_token}",
+      "Content-Type": "application/x-www-form-urlencoded"
+    ]
+
+    options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
+
+    get_request(endpoint, headers, options)
+  end
+
+  @doc """
   Send a message to a phone number
 
     ## Examples
@@ -39,17 +63,9 @@ defmodule Mobupay.Services.Twilio do
       }
       |> Jason.encode!()
 
-    IO.inspect(payload)
-
     options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 
     post_request(endpoint, payload, headers, options)
-  end
-
-  def verify_msisdn(msisdn, country_code) do
-
-
-
   end
 
   defp post_request(endpoint, payload, headers, options) do
@@ -63,6 +79,14 @@ defmodule Mobupay.Services.Twilio do
       error ->
         Logger.error("#{inspect(error)}")
         {:error, error}
+    end
+  end
+
+  defp get_request(endpoint, headers, options) do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           HTTPoison.get(endpoint, headers, options),
+         {:ok, json} <- Jason.decode(body) do
+      {:ok, json}
     end
   end
 end

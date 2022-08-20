@@ -21,7 +21,11 @@ defmodule Mobupay.AccountTest do
     end
 
     test "create_user/1 with valid data creates a user" do
-      valid_attrs = %{country_code: "some country_code", msisdn: "some msisdn", reference: "some reference"}
+      valid_attrs = %{
+        country_code: "some country_code",
+        msisdn: "some msisdn",
+        reference: "some reference"
+      }
 
       assert {:ok, %User{} = user} = Account.create_user(valid_attrs)
       assert user.country_code == "some country_code"
@@ -35,7 +39,12 @@ defmodule Mobupay.AccountTest do
 
     test "update_user/2 with valid data updates the user" do
       user = user_fixture()
-      update_attrs = %{country_code: "some updated country_code", msisdn: "some updated msisdn", reference: "some updated reference"}
+
+      update_attrs = %{
+        country_code: "some updated country_code",
+        msisdn: "some updated msisdn",
+        reference: "some updated reference"
+      }
 
       assert {:ok, %User{} = user} = Account.update_user(user, update_attrs)
       assert user.country_code == "some updated country_code"

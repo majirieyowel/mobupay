@@ -1,7 +1,7 @@
 <template>
-  <div v-if="showUI">
+  <div v-if="showTransferUI">
     <div>
-      <p>Fund Your Phone number</p>
+      <p>Send Money To Phone Number</p>
 
       <NuxtLink
         :to="{
@@ -23,10 +23,39 @@
       <br />
 
       <div v-if="step == 'fund'">
+        <h2 v-if="showBalance">
+          Balance: {{ $auth.$state.user.balance.currency
+          }}{{ $auth.$state.user.balance.amount | format_money }}
+        </h2>
+
+        <v-row align="center" v-if="showPaymentChannels">
+          <v-col class="d-flex" cols="12" sm="6">
+            <v-select
+              v-model="form.funding_channel"
+              :items="funding_channels"
+              item-text="label"
+              item-value="ref"
+              persistent-hint
+              label="Payment Channel"
+            >
+            </v-select>
+          </v-col>
+        </v-row>
+
         <v-row align="center">
           <v-col class="d-flex" cols="12" sm="6">
-            <v-text-field autofocus v-model="form.amount" label="Amount">
+            <v-text-field
+              autofocus
+              v-model="form.to_msisdn"
+              label="Phone Number"
+            >
             </v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-row align="center">
+          <v-col class="d-flex" cols="12" sm="6">
+            <v-text-field v-model="form.amount" label="Amount"> </v-text-field>
           </v-col>
         </v-row>
 
@@ -37,16 +66,28 @@
               :items="cards"
               item-text="label"
               item-value="ref"
-              hint="Ignore this field to fund from a new card"
               persistent-hint
               label="Select Card"
-            ></v-select>
+              clearable
+            >
+            </v-select>
           </v-col>
         </v-row>
 
         <v-row align="center">
           <v-col class="d-flex" cols="12" sm="6">
-            <v-btn @click="initiate_funding" elevation="2" outlined raised small
+            <v-text-field
+              v-model="form.narration"
+              label="Narration (optional)"
+              clearable
+            >
+            </v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-row align="center">
+          <v-col class="d-flex" cols="12" sm="6">
+            <v-btn @click="prePaymentCheck" elevation="2" outlined raised small
               >Proceed</v-btn
             >
           </v-col>
@@ -83,11 +124,11 @@
 
             <div class="bottomHalf">
               <p>
-                Your Account has been funded with {{ transactionCurrency
-                }}{{ transactionAmount | format_money }}
+                You have sent {{ transactionCurrency
+                }}{{ transactionAmount | format_money }} to
+                <b>{{ toMsisdn }}</b>
                 <br />
-                Current Balance: {{ transactionCurrency
-                }}{{ newbalance | format_money }}
+                <small>You can still get your money back</small>
               </p>
 
               <NuxtLink
@@ -106,112 +147,169 @@
       <br />
       <hr />
     </div>
+
+    <VerifyPassword
+      :show="showVerifyPasswordUI"
+      @close="showVerifyPasswordUI = false"
+      @successful="verifiedPassword"
+    />
   </div>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
+import VerifyPassword from "../../../components/VerifyPassword.vue";
+import Confirm from "../../../components/Confirm.vue";
 
 export default {
   middleware: "auth",
-  name: "send",
+  name: "transfer",
   computed: mapGetters(["cards"]),
   data: () => ({
-    showUI: false,
+    showTransferUI: false,
+    showVerifyPasswordUI: false,
     verifyingTransaction: true,
     step: "fund",
     showCards: false,
+    showBalance: false,
+    showPaymentChannels: false,
     transactionAmount: "",
+    toMsisdn: "",
     transactionCurrency: "",
-    newbalance: "",
+    funding_channels: [],
     form: {
       card: "",
+      to_msisdn: "2348108125270",
       amount: "",
+      narration: "",
       ip_address: "",
       device: "",
+      funding_channel: "Default",
     },
   }),
+  watch: {
+    "form.funding_channel"(newValue, oldValue) {
+      switch (newValue) {
+        case "Default":
+          this.showCards = false;
+          this.showBalance = false;
+          break;
+        case "Existing Card":
+          if (this.cards.length == 0) {
+            this.form.funding_channel = "Default";
+            this.$toast.error("You don't have any existing cards");
+          } else {
+            this.showCards = true;
+            this.showBalance = false;
+          }
+          break;
+        case "Balance":
+          this.showBalance = true;
+          this.showCards = false;
+          break;
+        default:
+          break;
+      }
+    },
+  },
   methods: {
-    async initiate_funding() {
+    async prePaymentCheck() {
+      if (
+        this.form.funding_channel == "Existing Card" &&
+        this.cards.length > 0
+      ) {
+        this.showVerifyPasswordUI = true;
+      } else {
+        this.initiatePayment();
+      }
+    },
+    async verifiedPassword() {
+      this.showVerifyPasswordUI = false;
+      this.initiatePayment();
+    },
+    async initiatePayment() {
       let ip = await this.$axios.$get(process.env.ipURL);
       this.form.ip_address = ip.origin;
       this.form.device = window.navigator.userAgent;
-
-      // if card is empty remove it from the request
-      if (this.form.card.trim().length < 1) {
-        delete this.form.card;
-      }
-
       try {
-        const response = await this.$axios.$post(
-          "/transaction/send/self/initiate",
-          this.form
-        );
-
-        switch (response.data.channel) {
-          case "new_gateway":
+        const response = await this.$axios.$post("/transfer", this.form);
+        switch (response.data.funding_channel) {
+          case "Default":
             window.location.href = response.data.transaction.authorization_url;
-
             break;
-          case "authorization_token":
+          case "Existing Card":
             this.paymentSuccess(response.data);
-
+          case "Balance":
+            this.$store.commit("updateBalance", response.data.new_balance);
+            this.paymentSuccess(response.data);
             break;
         }
       } catch (error) {
-        console.log("Request Error occured", error.response);
-      }
-    },
-    setupCards() {
-      if (this.cards.length > 0) {
-        this.showCards = true;
-
-        for (let index = 0; index < this.cards.length; index++) {
-          const element = this.cards[index];
-          element.label = `${element.bank} (${element.card_type})`;
+        if (error.response.status == 400) {
+          this.$toast.error(error.response.data.message);
+        } else if (error.response.status == 422) {
+          this.$toast.error(error.response.data.message);
+          console.log(error.response.data.error);
         }
       }
     },
     async verifyTransaction(payload) {
       this.verifyingTransaction = true;
       try {
-        const response = await this.$axios.post(
-          "transaction/send/self/verify",
-          payload
-        );
-
+        const response = await this.$axios.post("/transfer/verify", payload);
         this.paymentSuccess(response.data.data);
       } catch (error) {
         console.log(error);
+      }
+    },
+    setupCards() {
+      if (this.cards.length > 0) {
+        for (let index = 0; index < this.cards.length; index++) {
+          const element = this.cards[index];
+          element.label = `${element.bank} (${element.card_type})`;
+        }
+      }
+    },
+    setupPaymentChannels() {
+      const minimumBalance = 10000; //kobo
+      const allowed_payment_channels = ["Default"];
+      if (this.$auth.$state.user.balance.amount >= minimumBalance) {
+        allowed_payment_channels.push("Balance");
+      }
+      if (this.cards.length > 0) {
+        allowed_payment_channels.push("Existing Card");
+      }
+      if (allowed_payment_channels.length !== 1) {
+        this.showPaymentChannels = true;
+        this.funding_channels = allowed_payment_channels;
       }
     },
     paymentSuccess(data) {
       this.step = "verify";
       this.transactionAmount = data.transaction_amount;
       this.transactionCurrency = data.transaction_currency;
-      this.newbalance = data.balance;
-      this.$store.commit("updateBalance", data.balance);
+      this.toMsisdn = data.to_msisdn;
       this.$store.commit("mayBeAddCard", data.card);
       this.verifyingTransaction = false;
     },
   },
   mounted() {
     this.setupCards();
-
+    this.setupPaymentChannels();
     let route_params = this.$route.query;
-
     if (route_params.consolidator && route_params.reference) {
       this.step = "verify";
-      this.showUI = true;
+      this.showTransferUI = true;
       this.verifyTransaction({
         consolidator: route_params.consolidator,
         ref: route_params.reference,
       });
     } else {
       this.step = "fund";
-      this.showUI = true;
+      this.showTransferUI = true;
     }
   },
+  components: { VerifyPassword, Confirm },
 };
 </script>
 
@@ -249,9 +347,11 @@ export default {
 .topHalf p {
   margin-bottom: 30px;
 }
+
 svg {
   fill: white;
 }
+
 .topHalf h1 {
   font-size: 2.25rem;
   display: block;
@@ -276,7 +376,8 @@ li {
   display: block;
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.15); /* fade(green, 75%);*/
+  background-color: rgba(255, 255, 255, 0.15);
+  /* fade(green, 75%);*/
   bottom: -160px;
 
   -webkit-animation: square 20s infinite;
@@ -285,9 +386,11 @@ li {
   -webkit-transition-timing-function: linear;
   transition-timing-function: linear;
 }
+
 li:nth-child(1) {
   left: 10%;
 }
+
 li:nth-child(2) {
   left: 20%;
 
@@ -297,10 +400,12 @@ li:nth-child(2) {
   animation-delay: 2s;
   animation-duration: 17s;
 }
+
 li:nth-child(3) {
   left: 25%;
   animation-delay: 4s;
 }
+
 li:nth-child(4) {
   left: 40%;
   width: 60px;
@@ -308,19 +413,24 @@ li:nth-child(4) {
 
   animation-duration: 22s;
 
-  background-color: rgba(white, 0.3); /* fade(white, 25%); */
+  background-color: rgba(white, 0.3);
+  /* fade(white, 25%); */
 }
+
 li:nth-child(5) {
   left: 70%;
 }
+
 li:nth-child(6) {
   left: 80%;
   width: 120px;
   height: 120px;
 
   animation-delay: 3s;
-  background-color: rgba(white, 0.2); /* fade(white, 20%); */
+  background-color: rgba(white, 0.2);
+  /* fade(white, 20%); */
 }
+
 li:nth-child(7) {
   left: 32%;
   width: 160px;
@@ -328,6 +438,7 @@ li:nth-child(7) {
 
   animation-delay: 7s;
 }
+
 li:nth-child(8) {
   left: 55%;
   width: 20px;
@@ -336,6 +447,7 @@ li:nth-child(8) {
   animation-delay: 15s;
   animation-duration: 40s;
 }
+
 li:nth-child(9) {
   left: 25%;
   width: 10px;
@@ -343,8 +455,10 @@ li:nth-child(9) {
 
   animation-delay: 2s;
   animation-duration: 40s;
-  background-color: rgba(white, 0.3); /*fade(white, 30%);*/
+  background-color: rgba(white, 0.3);
+  /*fade(white, 30%);*/
 }
+
 li:nth-child(10) {
   left: 90%;
   width: 160px;
@@ -357,14 +471,17 @@ li:nth-child(10) {
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-500px) rotate(600deg);
   }
 }
+
 @keyframes square {
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-500px) rotate(600deg);
   }
@@ -374,6 +491,7 @@ li:nth-child(10) {
   align-items: center;
   padding: 35px;
 }
+
 .bottomHalf p {
   font-weight: 500;
   font-size: 1.05rem;
@@ -389,6 +507,7 @@ button {
   background-color: #019871;
   text-shadow: 0 1px rgba(128, 128, 128, 0.75);
 }
+
 button:hover {
   background-color: #85ddbf;
 }

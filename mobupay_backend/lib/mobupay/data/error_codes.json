@@ -7,5 +7,11 @@
     "unhandled_card_removal_error": "026",
     "unable_to_charge_authorization": "027",
     "unhandled_charge_authorization_error": "028",
+    "transaction_not_floating": "029",
+    "unhandled_payment_accept_error": "030",
+    "permission_denied_to_payment": "031",
+    "transaction_to_same_msisdn": "032",
+    "insufficient_balance": "034",
+    "invalid_phone_number": "035",
     "form_input_error": "042"
 }

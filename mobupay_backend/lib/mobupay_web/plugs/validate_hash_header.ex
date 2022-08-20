@@ -1,7 +1,7 @@
 defmodule MobupayWeb.Plugs.ValidateHashHeader do
   import Plug.Conn
 
-    alias Mobupay.Helpers.{Response, Encryption}
+  alias Mobupay.Helpers.{Response, Encryption}
   alias Mobupay.Services.Redis
 
   def init(default), do: default

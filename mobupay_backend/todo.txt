@@ -7,5 +7,12 @@ Transaction can only be initiated and completed from one device
 Transaction can be cancelled from any device
 
 OTHER
-Save transaction funding source data e.g Card last 4, BIN, Bank
+Save transaction funding source data e.g Card last 4, BIN, Bank (Table already created)
 Add customer code to transactions table
+Validate input types for transactions using changesets
+Add hidden togglable options to save card and new contact
+Accept terms and conditions
+Duplicate misisdn on database redis and real DB
+Format amount input in frontend
+
+

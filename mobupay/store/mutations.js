@@ -34,4 +34,28 @@ export default {
   pushTransactions(state, transactions_list) {
     state.transactions = transactions_list;
   },
+  updateTransactionStatus(state, transaction) {
+    state.transactions.map((item, index) => {
+      if (item.ref === transaction.ref) {
+        state.transactions[index].status = transaction.status;
+      }
+    });
+  },
+  transactionButtonLoadingStatus(state, { status, ref, producer }) {
+    state.transactions.map((item) => {
+      if (item.ref == ref) {
+        switch (producer) {
+          case "accept":
+            item.accept_loading = status;
+            break;
+          case "refuse":
+            item.refuse_loading = status;
+            break;
+          case "reclaim":
+            item.reclaim_loading = status;
+            break;
+        }
+      }
+    });
+  },
 };

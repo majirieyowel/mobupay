@@ -28,11 +28,19 @@ defmodule MobupayWeb.Router do
 
     get "/user", UserController, :user
     post "/user/add-email", UserController, :add_email
+    post "/user/verify-password", UserController, :verify_password
 
     # transactions
     get "/transaction", TransactionController, :transactions
     post "/transaction/send/self/initiate", TransactionController, :self_initiate
     post "/transaction/send/self/verify", TransactionController, :verify_transaction
+
+    # Transfer
+    post "/transfer", TransferController, :index
+    post "/transfer/verify", TransferController, :verify
+    post "/transfer/accept/:ref", TransferController, :accept
+    post "/transfer/reject/:ref", TransferController, :reject
+    post "/transfer/reclaim/:ref", TransferController, :reclaim
 
     # contact
     get "/contact/search", ContactController, :search
