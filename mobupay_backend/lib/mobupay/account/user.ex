@@ -2,7 +2,7 @@ defmodule Mobupay.Account.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Mobupay.Account.{BankAccount, Contact, Card}
+  alias Mobupay.Account.{BankAccount, Contact, Card, Withdrawal}
 
   @mail_regex ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/
 
@@ -22,6 +22,7 @@ defmodule Mobupay.Account.User do
     has_many(:bank_accounts, BankAccount)
     has_many(:cards, Card)
     has_many(:contacts, Contact)
+    has_many(:withdrawals, Withdrawal)
 
     timestamps()
   end

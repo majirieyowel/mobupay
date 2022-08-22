@@ -42,6 +42,11 @@ defmodule MobupayWeb.Router do
     post "/transfer/reject/:ref", TransferController, :reject
     post "/transfer/reclaim/:ref", TransferController, :reclaim
 
+    # withdrawal
+    get "/withdraw", WithdrawalController, :index
+    post "/withdraw", WithdrawalController, :initiate
+    post "/withdraw/complete", WithdrawalController, :complete
+
     # contact
     get "/contact/search", ContactController, :search
     resources "/contact", ContactController

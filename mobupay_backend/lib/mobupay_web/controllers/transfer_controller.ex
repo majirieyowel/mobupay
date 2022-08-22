@@ -45,7 +45,7 @@ defmodule MobupayWeb.TransferController do
     Logger.info("Received request to transfer with params #{inspect(params)}")
 
     with %Ecto.Changeset{valid?: true} <- Transactions.validate_transaction(params),
-         amount <- Utility.format_paystack_amount(amount),
+         amount <- Utility.remove_decimal(amount),
          call_back_hash <- Token.generate(30),
          {:ok, _} <- ensure_no_self_funding(from_msisdn, to_msisdn),
          {:ok, :verified} <- lookup_msisdn(to_msisdn),
@@ -126,7 +126,7 @@ defmodule MobupayWeb.TransferController do
              status: :initiated,
              from_msisdn: from_msisdn,
              to_msisdn: "wait_" <> to_msisdn,
-             amount: Utility.format_paystack_amount(amount),
+             amount: Utility.remove_decimal(amount),
              narration: narration,
              ip_address: ip_address,
              device: device
@@ -187,9 +187,9 @@ defmodule MobupayWeb.TransferController do
     Logger.info("Received request to transfer with params #{inspect(params)}")
 
     with %Ecto.Changeset{valid?: true} <- Transactions.validate_transaction(params),
-         amount <- Utility.format_paystack_amount(amount),
+         amount <- Utility.remove_decimal(amount),
          {:ok, _} <- ensure_no_self_funding(from_msisdn, to_msisdn),
-         {:ok, _} <- verify_sufficient_funds(user, amount),
+         {:ok, _} <- Transactions.verify_sufficient_funds(user, amount),
          {:ok, :verified} <- lookup_msisdn(to_msisdn),
          {:ok, %Transactions.Transaction{amount: transaction_amount} = transaction} <-
            Transactions.create_transaction(%{
@@ -545,16 +545,6 @@ defmodule MobupayWeb.TransferController do
        "E#{ErrorCode.get("transaction_to_same_msisdn")} - Cannot transfer to your phone number."}
     else
       {:ok, to_msisdn}
-    end
-  end
-
-  defp verify_sufficient_funds(user, amount) do
-    balance = Transactions.get_balance(user)
-
-    if balance > amount do
-      {:ok, balance}
-    else
-      {:error, "E#{ErrorCode.get("insufficient_balance")} - Insufficient Balance"}
     end
   end
 

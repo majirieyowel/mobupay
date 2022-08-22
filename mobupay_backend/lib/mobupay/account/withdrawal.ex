@@ -1,21 +1,15 @@
-defmodule Mobupay.Transactions.Transaction do
+defmodule Mobupay.Account.Withdrawal do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Mobupay.Transactions.Ledger
-
-  alias Mobupay.TransactionStatusEnum
+  alias Mobupay.WithdrawalStatusEnum
 
   @cast_attrs ~w{
       ref
-      to_ref
-      from_ref
-      callback_hash
       amount
       status
-      from_msisdn
-      to_msisdn
-      narration
+      bank_account_number
+      bank_name
       ip_address
       device
     }a
@@ -23,30 +17,23 @@ defmodule Mobupay.Transactions.Transaction do
   @derive {Jason.Encoder,
            only: [
              :ref,
-             :to_ref,
-             :from_ref,
              :amount,
              :status,
-             :from_msisdn,
-             :to_msisdn,
-             :narration,
+             :bank_account_number,
+             :bank_name,
              :inserted_at
            ]}
 
-  schema "transactions" do
+  schema "withdrawals" do
     field :ref, :string
-    field :to_ref, :string
-    field :from_ref, :string
-    field :callback_hash, :string
     field :amount, :integer
-    field :status, TransactionStatusEnum
-    field :from_msisdn, :string
-    field :to_msisdn, :string
-    field :narration, :string
+    field :status, WithdrawalStatusEnum
+    field :bank_account_number, :string
+    field :bank_name, :string
     field :ip_address, :string
     field :device, :string
 
-    has_one(:ledgers, Ledger)
+    belongs_to(:user, Account.User)
 
     timestamps()
   end
@@ -54,13 +41,7 @@ defmodule Mobupay.Transactions.Transaction do
   def changeset(transaction, attrs) do
     transaction
     |> cast(attrs, @cast_attrs)
-    |> validate_msisdn(attrs)
     |> validate_amount(attrs)
-  end
-
-  def validate_msisdn(changeset, _attrs) do
-    changeset
-    |> validate_required(:to_msisdn, message: "Phone number is required!")
   end
 
   def validate_amount(changeset, %{amount: amount}) do

@@ -4,7 +4,7 @@ defmodule Mobupay.Transactions do
   """
   import Ecto.Query, warn: false
   alias Mobupay.Repo
-  alias Mobupay.Helpers.Token
+  alias Mobupay.Helpers.{Token, ErrorCode}
   alias Mobupay.Transactions.{Transaction, Ledger}
   alias Mobupay.Account
 
@@ -70,6 +70,16 @@ defmodule Mobupay.Transactions do
 
   def ledger_entry_exists?(%Transaction{id: transaction_id, from_msisdn: msisdn}, :from_msisdn) do
     do_ledger_entry_exists?(transaction_id, msisdn)
+  end
+
+  def verify_sufficient_funds(user, amount) do
+    balance = get_balance(user)
+
+    if balance > amount do
+      {:ok, balance}
+    else
+      {:error, "E#{ErrorCode.get("insufficient_balance")} - Insufficient Balance"}
+    end
   end
 
   def get_balance(%Account.User{msisdn: msisdn}) do

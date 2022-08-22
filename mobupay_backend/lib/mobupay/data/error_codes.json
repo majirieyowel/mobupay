@@ -13,5 +13,12 @@
     "transaction_to_same_msisdn": "032",
     "insufficient_balance": "034",
     "invalid_phone_number": "035",
-    "form_input_error": "042"
+    "bank_account_not_found": "036",
+    "unhandled_withdrawal_initiation_error": "037",
+    "unhandled_withdrawal_completion_error": "038",
+    "invalid_withdrawal_otp": "039",
+    "ip_address_mismatch": "040",
+    "error_creating_transfer_recipient": "041",
+    "form_input_error": "042",
+    "error_transfering_funds": "043"
 }

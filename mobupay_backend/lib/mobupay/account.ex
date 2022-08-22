@@ -6,9 +6,11 @@ defmodule Mobupay.Account do
   import Ecto.Query, warn: false
   alias Mobupay.Repo
 
-  alias Mobupay.Account.{User, BankAccount, Contact, Card}
+  alias Mobupay.Account.{User, BankAccount, Contact, Card, Withdrawal}
   alias Mobupay.Helpers.Token
 
+  @spec partial_onboard(%{optional(:__struct__) => none, optional(atom | binary) => any}) ::
+          Ecto.Changeset.t()
   def partial_onboard(%{"msisdn" => _msisdn} = user_params) do
     %User{}
     |> User.partial_onboarding_changeset(user_params)
@@ -58,6 +60,13 @@ defmodule Mobupay.Account do
   def list_bank_account_by_ref(ref) do
     BankAccount
     |> where([ba], ba.ref == ^ref)
+    |> Repo.one()
+  end
+
+  def list_user_bank_account_by_ref(%User{id: user_id}, ref) do
+    BankAccount
+    |> where([ba], ba.ref == ^ref)
+    |> where([ba], ba.user_id == ^user_id)
     |> Repo.one()
   end
 
@@ -162,7 +171,7 @@ defmodule Mobupay.Account do
     |> Repo.exists?()
   end
 
-  def list_card_by_ref(ref) do
+  def get_card_by_ref(ref) do
     Card
     |> where([c], c.ref == ^ref)
     |> Repo.one()
@@ -170,5 +179,27 @@ defmodule Mobupay.Account do
 
   def delete_card(%Card{} = card) do
     Repo.delete(card)
+  end
+
+  # Withdrawal
+
+  def list_user_withdrawals(%User{id: user_id}, params \\ %{}) do
+    Withdrawal
+    |> where([t], t.user_id == ^user_id)
+    |> order_by([t], desc: t.id)
+    |> Repo.paginate(params)
+  end
+
+  def create_withdrawal(user, attrs) do
+    user
+    |> Ecto.build_assoc(:withdrawals)
+    |> Withdrawal.changeset(attrs)
+    |> Repo.insert()
+  end
+
+    def get_withdrawal_by_ref(ref) do
+    Withdrawal
+    |> where([w], w.ref == ^ref)
+    |> Repo.one()
   end
 end

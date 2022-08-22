@@ -5,6 +5,72 @@ defmodule Mobupay.Services.Paystack do
 
   require Logger
 
+  @spec transfer(map()) :: {:ok, map()} | {:error, any()}
+  def transfer(%{
+        amount: amount,
+        recipient_code: recipient_code,
+        reference: reference
+      }) do
+    base_url = System.get_env("PAYSTACK_BASE_URL")
+    endpoint = "#{base_url}transfer"
+    secret_key = System.get_env("PAYSTACK_SECRET_KEY")
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer #{secret_key}"}
+    ]
+
+    payload =
+      %{
+        source: "balance",
+        amount: amount,
+        recipient_code: recipient_code,
+        reference: reference
+      }
+      |> Jason.encode!()
+
+    Logger.info(
+      "paystack::requesting transfer Endpoint: #{endpoint} with payload: #{inspect(payload)}"
+    )
+
+    options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
+
+    post_request(endpoint, payload, headers, options)
+  end
+
+  @spec create_transfer_recipient(map()) :: {:ok, map()} | {:error, any()}
+  def create_transfer_recipient(%{
+        bank_code: bank_code,
+        name: bank_account_name,
+        account_number: bank_account_number
+      }) do
+    base_url = System.get_env("PAYSTACK_BASE_URL")
+    endpoint = "#{base_url}transferrecipient"
+    secret_key = System.get_env("PAYSTACK_SECRET_KEY")
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer #{secret_key}"}
+    ]
+
+    payload =
+      %{
+        type: "nuban",
+        name: bank_account_name,
+        account_number: bank_account_number,
+        bank_code: bank_code
+      }
+      |> Jason.encode!()
+
+    Logger.info(
+      "paystack::requesting create_transfer_recipient Endpoint: #{endpoint} with payload: #{inspect(payload)}"
+    )
+
+    options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
+
+    post_request(endpoint, payload, headers, options)
+  end
+
   @spec initialize_transaction(map()) :: {:ok, map()} | {:error, any()}
   def initialize_transaction(%{amount: amount, email: email, callback: callback}) do
     base_url = System.get_env("PAYSTACK_BASE_URL")
@@ -128,7 +194,7 @@ defmodule Mobupay.Services.Paystack do
   end
 
   defp post_request(endpoint, payload, headers, options) do
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+    with {:ok, %HTTPoison.Response{status_code: _status_code, body: body}} <-
            HTTPoison.post(endpoint, payload, headers, options),
          json <- Jason.decode!(body) do
       Logger.info("Paystack api response: #{inspect(body)} ")

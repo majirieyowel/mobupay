@@ -14,5 +14,6 @@ Add hidden togglable options to save card and new contact
 Accept terms and conditions
 Duplicate misisdn on database redis and real DB
 Format amount input in frontend
+generating Statements
 
 
