@@ -3,9 +3,11 @@ defmodule Mobupay.Account.Withdrawal do
   import Ecto.Changeset
 
   alias Mobupay.WithdrawalStatusEnum
+  alias Mobupay.Account
 
   @cast_attrs ~w{
       ref
+      customer_ref
       amount
       status
       bank_account_number
@@ -18,6 +20,7 @@ defmodule Mobupay.Account.Withdrawal do
            only: [
              :ref,
              :amount,
+             :customer_ref,
              :status,
              :bank_account_number,
              :bank_name,
@@ -26,6 +29,7 @@ defmodule Mobupay.Account.Withdrawal do
 
   schema "withdrawals" do
     field :ref, :string
+    field :customer_ref, :string
     field :amount, :integer
     field :status, WithdrawalStatusEnum
     field :bank_account_number, :string

@@ -45,6 +45,7 @@ defmodule MobupayWeb.WithdrawalController do
          {:ok, %Account.Withdrawal{}} <-
            Account.create_withdrawal(user, %{
              ref: reference,
+             customer_ref: Token.generate(10),
              bank_account_number: nuban,
              bank_name: bank_name,
              status: :initiated,

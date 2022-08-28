@@ -3,8 +3,8 @@ defmodule MobupayWeb.OnboardController do
 
   alias Mobupay.Account
   alias Mobupay.CountryData
-  alias Mobupay.Services.{Redis, Termil}
-  alias Mobupay.Helpers.{Response, Token, Encryption}
+  alias Mobupay.Services.{Redis, Twilio}
+  alias Mobupay.Helpers.{Response, Token, Encryption, Msisdn}
 
   require Logger
 
@@ -47,27 +47,35 @@ defmodule MobupayWeb.OnboardController do
     end
   end
 
-  def partial_onboard(conn, user_params) do
+  def partial_onboard(conn, %{"msisdn" => request_msisdn, "country" => country} = user_params) do
     Logger.info("Received request to create user with details #{inspect(user_params)}")
 
     random_token = Token.generate(:random)
 
     encoded_random_token = Encryption.hash(random_token)
 
-    with %Ecto.Changeset{valid?: true, changes: %{msisdn: msisdn} = changes} <-
-           Account.partial_onboard(user_params),
+    with {:ok, formatted_msisdn} <- Msisdn.format(country, request_msisdn),
+         updated_user_params <- Map.put(user_params, "msisdn", formatted_msisdn),
+         %Ecto.Changeset{valid?: true, changes: %{msisdn: msisdn} = changes} <-
+           Account.partial_onboard(updated_user_params),
+         {:ok, _data} <- Twilio.lookup(msisdn),
          updated_changes <- Map.put(changes, "onboard_step", "verify_otp"),
          updated_changes <- Map.put(updated_changes, "_hash", encoded_random_token),
          {:ok, "OK"} <- Redis.set(msisdn, updated_changes),
          {:ok, _otp} <- generate_and_send_onboarding_otp(msisdn) do
       conn
       |> Response.ok(%{
-        "_hash" => random_token
+        "_hash" => random_token,
+        "msisdn" => formatted_msisdn
       })
     else
       %Ecto.Changeset{valid?: false} = changeset ->
         conn
         |> Response.ecto_changeset_error(changeset)
+
+      {:error, message} ->
+        conn
+        |> Response.error(400, message)
 
       error ->
         Logger.error(
@@ -75,10 +83,11 @@ defmodule MobupayWeb.OnboardController do
         )
 
         conn
-        |> Response.error(:bad_request)
+        |> Response.error(500, "Server error")
     end
   end
 
+  @spec resend_otp(Plug.Conn.t(), any) :: Plug.Conn.t()
   def resend_otp(conn, %{"msisdn" => msisdn}) do
     Logger.info("Received request to resend onboarding OTP to #{msisdn}")
 
@@ -171,7 +180,10 @@ defmodule MobupayWeb.OnboardController do
            ) do
       # async
       Task.Supervisor.async_nolink(Mobupay.TaskSupervisor, fn ->
-        Termil.send(:onboarding_otp, msisdn: msisdn, otp: otp)
+        message = "#{otp} is your roundup registration code."
+        IO.inspect(self(), label: "Process: ")
+        IO.inspect(message)
+        # Twilio.send(msisdn, message)
       end)
 
       {:ok, otp}

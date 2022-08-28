@@ -47,6 +47,10 @@ defmodule MobupayWeb.Router do
     post "/withdraw", WithdrawalController, :initiate
     post "/withdraw/complete", WithdrawalController, :complete
 
+    # Business
+    resources "/business", BusinessController
+
+
     # contact
     get "/contact/search", ContactController, :search
     resources "/contact", ContactController

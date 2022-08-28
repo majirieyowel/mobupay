@@ -14,11 +14,11 @@ export default {
       { hid: "description", name: "description", content: "" },
       { name: "format-detection", content: "telephone=no" },
     ],
-    link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+    link: [{ rel: "icon", type: "image/x-icon", href: "/favicon-32x32.png" }],
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [],
+  css: ["@/assets/css/global.scss"],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: ["@/plugins/money.js"],
@@ -72,6 +72,9 @@ export default {
         // autoLogout: false
       },
     },
+    redirect: {
+      logout: "/login",
+    },
   },
 
   toast: {
@@ -85,7 +88,7 @@ export default {
     showCloseButtonOnHover: false,
     hideProgressBar: true,
     closeButton: "button",
-    icon: true,
+    icon: false,
     rtl: false,
   },
 
@@ -93,7 +96,7 @@ export default {
   vuetify: {
     customVariables: ["~/assets/variables.scss"],
     theme: {
-      dark: true,
+      dark: false,
       themes: {
         dark: {
           primary: colors.blue.darken2,
@@ -112,14 +115,14 @@ export default {
     // proxy: true
     baseURL: "http://localhost:4000/api/v1",
   },
-  loading: false,
+  // loading: false,
 
-  // loading: {
-  //   color: "#87d37c",
-  //   height: "2px",
-  //   throttle: 0,
-  //   continuous: true,
-  // },
+  loading: {
+    color: "#87d37c",
+    height: "2px",
+    throttle: 0,
+    continuous: true,
+  },
 
   env: {
     ipURL: "https://httpbin.org/ip",

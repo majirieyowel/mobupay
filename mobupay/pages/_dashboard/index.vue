@@ -19,7 +19,7 @@
     |
     <NuxtLink
       :to="{
-        name: 'dashboard-bank-accounts',
+        name: 'dashboard-withdraw',
         params: { dashboard: $auth.$state.user.msisdn },
       }"
       >Withdraw</NuxtLink
@@ -31,7 +31,7 @@
       <li>
         <NuxtLink
           :to="{
-            name: 'dashboard-contacts',
+            name: 'dashboard-invoice',
             params: { dashboard: $auth.$state.user.msisdn },
           }"
           >Invoice</NuxtLink
@@ -68,10 +68,10 @@
       <li>
         <NuxtLink
           :to="{
-            name: 'dashboard-settings',
+            name: 'dashboard-activity',
             params: { dashboard: $auth.$state.user.msisdn },
           }"
-          >Help Center</NuxtLink
+          >Activity</NuxtLink
         >
       </li>
       <li>
@@ -81,6 +81,15 @@
             params: { dashboard: $auth.$state.user.msisdn },
           }"
           >Settings</NuxtLink
+        >
+      </li>
+      <li>
+        <NuxtLink
+          :to="{
+            name: 'dashboard-settings',
+            params: { dashboard: $auth.$state.user.msisdn },
+          }"
+          >Help Center</NuxtLink
         >
       </li>
     </ul>
@@ -191,7 +200,50 @@
 
     <br />
     <br />
-    <button @click="$auth.logout()">Logout</button>
+
+    <p>Withdrawals: <span @click="refresh_withdrawals">Refresh</span></p>
+
+    <v-simple-table height="300px">
+      <template v-slot:default>
+        <thead>
+          <tr>
+            <th class="text-left">Status</th>
+            <th class="text-left">Amount</th>
+            <th class="text-left">Bank&nbsp;Name</th>
+            <th class="text-left">Bank&nbsp;Account</th>
+            <th class="text-left">Reference</th>
+            <th class="text-left">Date&nbsp;Created</th>
+          </tr>
+        </thead>
+        <tbody v-if="withdrawals.length">
+          <tr v-for="item in withdrawals" :key="item.ref">
+            <td>
+              {{ item.status }}
+            </td>
+            <td>
+              {{ item.amount | format_money }}
+            </td>
+
+            <td>
+              {{ item.bank_name }}
+            </td>
+            <td>
+              {{ item.bank_account_number }}
+            </td>
+            <td>
+              {{ item.customer_ref }}
+            </td>
+            <td>{{ $moment(item.inserted_at).calendar() }}</td>
+          </tr>
+        </tbody>
+
+        <tbody v-else>
+          <tr>
+            <td style="text-align: center" colspan="6">No Withdrawals</td>
+          </tr>
+        </tbody>
+      </template>
+    </v-simple-table>
 
     <Confirm
       :show="showConfirmReclaimUI"
@@ -205,26 +257,29 @@
 </template>
 
 <script>
-import { throws } from "assert";
 import { mapGetters } from "vuex";
 
 export default {
   middleware: ["auth", "verify_url_msisdn"],
+  layout: "dashboard",
   name: "dashboard",
   data: () => ({
     showConfirmReclaimUI: false,
     reclaimRef: "",
   }),
-  computed: mapGetters(["transactions"]),
+  computed: mapGetters(["transactions", "withdrawals"]),
 
   methods: {
     refresh_transactions() {
-      this.load();
+      this.loadTransactions();
+    },
+    refresh_withdrawals() {
+      this.loadWithdrawals();
     },
     remove_wait(string) {
       return string.startsWith("wait_") ? string.split("_")[1] : string;
     },
-    async load() {
+    async loadTransactions() {
       let transactions = await this.$axios.$get("/transaction");
 
       transactions.data.transactions.forEach((i) => {
@@ -233,6 +288,11 @@ export default {
         i.reclaim_loading = false;
       });
       this.$store.commit("pushTransactions", transactions.data.transactions);
+    },
+    async loadWithdrawals() {
+      let withdrawals = await this.$axios.$get("/withdraw");
+
+      this.$store.commit("pushWithdrawals", withdrawals.data.withdrawals);
     },
 
     confirmReclaim(ref) {
@@ -288,7 +348,8 @@ export default {
     },
   },
   mounted() {
-    this.load();
+    this.loadTransactions();
+    this.loadWithdrawals();
   },
 };
 </script>

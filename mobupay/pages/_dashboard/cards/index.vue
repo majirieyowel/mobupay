@@ -41,8 +41,9 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "cards",
+  layout: "dashboard",
   computed: mapGetters(["cards"]),
   methods: {
     async deleteCard(ref) {

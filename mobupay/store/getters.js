@@ -8,4 +8,7 @@ export default {
   transactions(state) {
     return state.transactions;
   },
+  withdrawals(state) {
+    return state.withdrawals;
+  },
 };

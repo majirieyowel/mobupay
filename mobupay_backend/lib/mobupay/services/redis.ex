@@ -76,9 +76,9 @@ defmodule Mobupay.Services.Redis do
     |> Enum.into(%{})
   end
 
-  defp encode_value(value) when is_map(value) do
+  def encode_value(value) when is_map(value) do
     value
     |> stringify_keys()
-    |> Jason.encode!(value)
+    |> Jason.encode!()
   end
 end

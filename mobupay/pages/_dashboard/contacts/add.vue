@@ -56,8 +56,9 @@
 
 <script>
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "add-bank-account",
+  layout: "dashboard",
   data: () => ({
     fetchingBankName: false,
     isLoadingBanks: true,

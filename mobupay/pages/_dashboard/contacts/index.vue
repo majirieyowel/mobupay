@@ -43,8 +43,9 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "contacts",
+  layout: "dashboard",
   computed: mapGetters(["bankAccounts"]),
   methods: {
     async deleteBankAccount(ref) {

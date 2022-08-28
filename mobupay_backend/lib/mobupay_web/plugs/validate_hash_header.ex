@@ -15,7 +15,7 @@ defmodule MobupayWeb.Plugs.ValidateHashHeader do
     else
       _error ->
         conn
-        |> Response.error(400, "For security reasons continue onboarding from the same device")
+        |> Response.error(400, "Continue onboarding from the same device")
         |> halt()
     end
   end

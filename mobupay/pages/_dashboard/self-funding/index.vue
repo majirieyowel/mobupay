@@ -114,8 +114,9 @@
 import { mapGetters } from "vuex";
 
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "self-funding",
+  layout: "dashboard",
   computed: mapGetters(["cards"]),
   data: () => ({
     showUI: false,

@@ -38,8 +38,9 @@
 
 <script>
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "add-email",
+  layout: "dashboard",
   data: () => ({
     form: {
       email: "majirieyowel@gmail.com",

@@ -26,13 +26,7 @@
 
     <v-row align="center">
       <v-col class="d-flex" cols="12" sm="6">
-        <v-btn @click="login" elevation="2" outlined raised small>Login</v-btn>
-      </v-col>
-    </v-row>
-
-    <v-row align="center">
-      <v-col class="d-flex" cols="12" sm="6">
-        <NuxtLink to="/get-started">Register</NuxtLink>
+        <v-btn @click="login" class="button" color="#0052ff" tile>Login</v-btn>
       </v-col>
     </v-row>
   </div>

@@ -115,7 +115,8 @@ export default {
         const { country, city, region } = ip_info;
         firstForm.params.city = city;
         firstForm.params.region = region;
-        let matched_country = gettingStarted.data.supported_countries[country.toLowerCase()];
+        let matched_country =
+          gettingStarted.data.supported_countries[country.toLowerCase()];
         if (typeof matched_country !== "undefined") {
           firstForm.params.country = matched_country.name;
         } else {

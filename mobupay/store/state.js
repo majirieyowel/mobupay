@@ -3,4 +3,5 @@ export default () => ({
     _hash: "",
   },
   transactions: [],
+  withdrawals: [],
 });

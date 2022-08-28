@@ -23,6 +23,7 @@ defmodule Mobupay.Account.User do
     has_many(:cards, Card)
     has_many(:contacts, Contact)
     has_many(:withdrawals, Withdrawal)
+    has_many(:businesses, Withdrawal)
 
     timestamps()
   end
@@ -32,6 +33,7 @@ defmodule Mobupay.Account.User do
     user
     |> cast(attrs, [:msisdn, :country, :city, :region])
     |> validate_required_onboarding()
+    |> validate_msisdn()
   end
 
   def full_onboarding_changeset(user, attrs) do
@@ -78,8 +80,8 @@ defmodule Mobupay.Account.User do
   defp validate_msisdn(changeset) do
     changeset
     |> validate_format(:msisdn, ~r/^[0-9]*$/, message: "Only numbers without space allowed")
-    |> unsafe_validate_unique(:msisdn, Mobupay.Repo, message: "Phone number is not available")
-    |> unique_constraint(:msisdn, message: "Phone number is not available!")
+    |> unsafe_validate_unique(:msisdn, Mobupay.Repo, message: "Mobile number registered. Sign in.")
+    |> unique_constraint(:msisdn, message: "Mobile number registered. Sign in.")
   end
 
   defp validate_password(changeset) do

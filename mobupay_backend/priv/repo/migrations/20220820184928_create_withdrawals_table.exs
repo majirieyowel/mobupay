@@ -6,6 +6,7 @@ defmodule Mobupay.Repo.Migrations.CreateWithdrawalsTable do
 
     create table(:withdrawals) do
       add(:ref, :string, null: false)
+      add(:customer_ref, :string, null: false)
       add(:amount, :integer, null: false)
       add(:status, :withdrawal_status, null: false)
       add(:bank_account_number, :string, null: false)

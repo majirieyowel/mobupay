@@ -34,6 +34,9 @@ export default {
   pushTransactions(state, transactions_list) {
     state.transactions = transactions_list;
   },
+  pushWithdrawals(state, withdrawals_list) {
+    state.withdrawals = withdrawals_list;
+  },
   updateTransactionStatus(state, transaction) {
     state.transactions.map((item, index) => {
       if (item.ref === transaction.ref) {

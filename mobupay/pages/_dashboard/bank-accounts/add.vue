@@ -56,8 +56,9 @@
 
 <script>
 export default {
-  middleware: "auth",
+  middleware: ["auth", "verify_url_msisdn"],
   name: "add-bank-account",
+  layout: "dashboard",
   data: () => ({
     fetchingBankName: false,
     isLoadingBanks: true,
@@ -90,8 +91,14 @@ export default {
 
         this.$toast.success("Bank Account Added!");
 
+        let redirect_to = "dashboard-bank-accounts";
+
+        if (this.$route.query.redirect) {
+          redirect_to = this.$route.query.redirect;
+        }
+
         this.$router.push({
-          name: "dashboard-bank-accounts",
+          name: redirect_to,
           params: { dashboard: this.$auth.$state.user.msisdn },
         });
       } catch (error) {

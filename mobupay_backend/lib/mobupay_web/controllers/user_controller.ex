@@ -14,9 +14,11 @@ defmodule MobupayWeb.UserController do
         %Plug.Conn{assigns: %{current_user: %Account.User{country: country} = user}} = conn,
         _params
       ) do
+    {:ok, currency} = CountryData.get_currency(country)
+
     balance = %{
       amount: Transactions.get_balance(user),
-      currency: CountryData.get_currency(country)
+      currency: currency
     }
 
     user =

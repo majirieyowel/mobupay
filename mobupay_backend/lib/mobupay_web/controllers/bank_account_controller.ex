@@ -11,9 +11,12 @@ defmodule MobupayWeb.BankAccountController do
     with {:ok, %Mobupay.Account.BankAccount{} = bank_account} <-
            Account.create_bank_account(user, params) do
       conn
-      |> Response.ok(%{
-        bank_account: bank_account
-      })
+      |> Response.ok(
+        %{
+          bank_account: bank_account
+        },
+        201
+      )
     else
       {:error, %Ecto.Changeset{valid?: false} = changeset} ->
         conn

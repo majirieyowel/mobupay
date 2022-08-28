@@ -3,24 +3,20 @@ defmodule Mobupay.CountryData do
 
   @countries_info_file_path "lib/mobupay/data/countries_data.txt"
 
-  def get_currency_unit(country) do
-    [%{"currency_unit" => currency_unit}] =
-      parse_data()
-      |> Stream.map(&parse_to_maps(&1))
-      |> Stream.filter(fn item -> item["name"] == country end)
-      |> Enum.into([])
-
-    String.to_integer(currency_unit)
-  end
-
   def get_currency(country) do
-    [%{"currency" => currency}] =
+    parsed =
       parse_data()
       |> Stream.map(&parse_to_maps(&1))
       |> Stream.filter(fn item -> item["name"] == country end)
       |> Enum.into([])
 
-    currency
+    case parsed do
+      [%{"currency" => currency}] ->
+        {:ok, currency}
+
+      _ ->
+        {:error, "Currency for #{country} was not found"}
+    end
   end
 
   def get_by(:country_code) do

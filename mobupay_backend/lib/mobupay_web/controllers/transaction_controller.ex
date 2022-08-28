@@ -63,12 +63,13 @@ defmodule MobupayWeb.TransactionController do
          {:ok, %Transactions.Transaction{}} <-
            Transactions.update_transaction_status(transaction, :accepted),
          {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
-         new_balance <- Transactions.get_balance(user) do
+         new_balance <- Transactions.get_balance(user),
+         {:ok, currency} <- CountryData.get_currency(country) do
       conn
       |> Response.ok(%{
         balance: new_balance,
         transaction_amount: transaction_amount,
-        transaction_currency: CountryData.get_currency(country),
+        transaction_currency: currency,
         card: %{},
         channel: "authorization_token"
       })
@@ -106,7 +107,7 @@ defmodule MobupayWeb.TransactionController do
       ) do
     Logger.info("Received request for self account funding with params #{inspect(params)}")
 
-    amount = Utility.remove_decimal(amount, CountryData.get_currency_unit(country))
+    amount = Utility.remove_decimal(amount)
 
     call_back_hash = Token.generate(60)
 
@@ -170,12 +171,13 @@ defmodule MobupayWeb.TransactionController do
            Transactions.update_transaction_status(transaction, :accepted),
          {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
          {:ok, card} <- maybe_save_card(user, paystack_data),
-         new_balance <- Transactions.get_balance(user) do
+         new_balance <- Transactions.get_balance(user),
+         {:ok, currency} <- CountryData.get_currency(country) do
       conn
       |> Response.ok(%{
         balance: new_balance,
         transaction_amount: transaction_amount,
-        transaction_currency: CountryData.get_currency(country),
+        transaction_currency: currency,
         card: card
       })
     else

@@ -77,6 +77,12 @@ defmodule Mobupay.Account do
     |> Repo.exists?()
   end
 
+  def msisdn_exists?(msisdn) do
+    User
+    |> where([u], u.msisdn == ^msisdn)
+    |> Repo.exists?()
+  end
+
   def delete_bank_account(%BankAccount{} = bank_account) do
     Repo.delete(bank_account)
   end

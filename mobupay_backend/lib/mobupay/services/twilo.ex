@@ -24,7 +24,15 @@ defmodule Mobupay.Services.Twilio do
 
     options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 
-    get_request(endpoint, headers, options)
+    lookup_response = get_request(endpoint, headers, options)
+
+    case lookup_response do
+      {:ok, %{"phone_number" => _msisdn}} ->
+        lookup_response
+
+      _ ->
+        {:error, "Mobile number '#{msisdn}' is invalid"}
+    end
   end
 
   @doc """
@@ -55,13 +63,11 @@ defmodule Mobupay.Services.Twilio do
       "Content-Type": "application/x-www-form-urlencoded"
     ]
 
-    payload =
-      %{
-        Body: message,
-        From: twilio_number,
-        To: msisdn
-      }
-      |> Jason.encode!()
+    payload = ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}}
+    # payload =
+    #   ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}&StatusCallback=https://webhook.site/19151fc9-fd8f-4907-a4db-df81c42729f1}
+
+    Logger.info("Twilio: Sending message with payload: #{payload}")
 
     options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 

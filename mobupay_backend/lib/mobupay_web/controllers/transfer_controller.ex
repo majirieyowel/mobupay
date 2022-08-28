@@ -206,12 +206,13 @@ defmodule MobupayWeb.TransferController do
            Transactions.update_transaction_status(transaction, :floating),
          {:ok, %Transactions.Ledger{}} <-
            maybe_create_ledger_entry(transaction, :minus, :from_msisdn),
-         new_balance <- Transactions.get_balance(user) do
+         new_balance <- Transactions.get_balance(user),
+         {:ok, currency} <- CountryData.get_currency(country) do
       conn
       |> Response.ok(%{
         transaction_amount: transaction_amount,
         new_balance: new_balance,
-        transaction_currency: CountryData.get_currency(country),
+        transaction_currency: currency,
         to_msisdn: to_msisdn,
         card: %{},
         funding_channel: "Existing Card"

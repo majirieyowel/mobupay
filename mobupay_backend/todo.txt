@@ -1,6 +1,8 @@
 ASTHETICS:
 Add confetti after registration feature
 
+fonts: "sohne-var","Helvetica Neue","Arial",sans-serif
+
 SECURITY:
 Add max attempts for validating OTP (3) - Then flag account (Unusual activity)
 Transaction can only be initiated and completed from one device
@@ -15,5 +17,9 @@ Accept terms and conditions
 Duplicate misisdn on database redis and real DB
 Format amount input in frontend
 generating Statements
+Run with docker
+Add customer ref to withdrawals
+Option to add new bank account from withdrawal page
+
 
 

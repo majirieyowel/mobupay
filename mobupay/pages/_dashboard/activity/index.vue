@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p>Contacts</p>
+    <p>Your Activity</p>
 
     <NuxtLink
       :to="{
@@ -21,8 +21,9 @@
 <script>
 export default {
   middleware: ["auth", "verify_url_msisdn"],
-  name: "settings",
+  name: "activity",
   layout: "dashboard",
+  data: () => ({}),
   methods: {},
   mounted() {},
 };
