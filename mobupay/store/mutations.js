@@ -61,4 +61,7 @@ export default {
       }
     });
   },
+  setBreadcrumb(state, data) {
+    state.breadcrumbs = data;
+  },
 };

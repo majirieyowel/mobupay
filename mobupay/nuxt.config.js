@@ -24,7 +24,7 @@ export default {
   plugins: ["@/plugins/money.js"],
 
   router: {
-    middleware: ["user_agent_detect"],
+    middleware: ["user_agent_detect", "route_detect"],
   },
 
   // Auto import components: https://go.nuxtjs.dev/config-components

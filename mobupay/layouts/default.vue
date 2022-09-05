@@ -1,6 +1,6 @@
 <template>
-  <v-app>
-    <v-container fluid class="lighten-5 pa-0">
+  <v-app class="__app">
+    <v-container fluid class="pa-0">
       <v-system-bar color="orange" class="px-0 justify-center">
         Beta
       </v-system-bar>
@@ -41,7 +41,7 @@
                 <NuxtLink
                   class="grey--text text-5 text-decoration-none"
                   to="/login"
-                  >Sign in</NuxtLink
+                  >Login</NuxtLink
                 >
               </div>
             </v-col>
@@ -51,7 +51,7 @@
 
       <v-row no-gutters>
         <v-col cols="12">
-          <v-col lg="10" md="12" sm="12" class="pt-15 px-md-5 mx-auto">
+          <v-col lg="10" md="12" sm="12" class="px-md-5 mx-auto working-box">
             <Nuxt />
           </v-col>
         </v-col>
@@ -66,12 +66,17 @@ export default {
 };
 </script>
 
-<style scoped>
-.logo {
-  vertical-align: bottom;
-}
-.header {
-  height: 58px;
-  border-bottom: 1px dashed rgb(236, 239, 241);
+<style lang="scss" scoped>
+.__app {
+  background-color: $grey_light;
+
+  .logo {
+    vertical-align: bottom;
+  }
+  .header {
+    height: 58px;
+    background-color: $white;
+    border-bottom: 1px dashed rgb(236, 239, 241);
+  }
 }
 </style>

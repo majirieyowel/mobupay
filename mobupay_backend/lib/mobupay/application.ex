@@ -17,6 +17,7 @@ defmodule Mobupay.Application do
       # Start the Endpoint (http/https)
       MobupayWeb.Endpoint,
       {Redix, name: :redix},
+      # {Redix, host: "redis-18910.c84.us-east-1-2.ec2.cloud.redislabs.com:18910", name: :redix},
       {Task.Supervisor, name: Mobupay.TaskSupervisor}
     ]
 

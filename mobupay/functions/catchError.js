@@ -1,5 +1,5 @@
 export default (error, caller) => {
-  if (error.response.status == 400) {
+  if ([400, 401, 404].includes(error.response.status)) {
     caller.$toast.error(error.response.data.message);
   } else if (error.response.status == 422) {
     caller.$toast.error(Object.values(error.response.data.error)[0][0]);

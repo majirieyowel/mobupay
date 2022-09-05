@@ -1,27 +1,6 @@
 <template>
   <div v-if="showTransferUI">
     <div>
-      <p>Send Money To Phone Number</p>
-
-      <NuxtLink
-        :to="{
-          name: 'dashboard',
-          params: { dashboard: $auth.$state.user.msisdn },
-        }"
-        >Dashboard</NuxtLink
-      >
-
-      <NuxtLink
-        :to="{
-          name: 'dashboard-send',
-          params: { dashboard: $auth.$state.user.msisdn },
-        }"
-      >
-        &lt;&lt; Send Options</NuxtLink
-      >
-      <hr />
-      <br />
-
       <div v-if="step == 'fund'">
         <h2 v-if="showBalance">
           Balance: {{ $auth.$state.user.balance.currency
@@ -117,9 +96,6 @@
           </div>
         </Success>
       </div>
-
-      <br />
-      <hr />
     </div>
 
     <VerifyPassword
@@ -139,6 +115,16 @@ export default {
   middleware: ["auth", "verify_url_msisdn"],
   name: "transfer",
   layout: "dashboard",
+  meta: {
+    breadcrumbs: [
+      {
+        text: "Send",
+        disabled: true,
+        help: true,
+        to: "#",
+      },
+    ],
+  },
   computed: mapGetters(["cards"]),
   data: () => ({
     showTransferUI: false,

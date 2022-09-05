@@ -1,6 +1,6 @@
 <template>
-  <v-row class="my-md-15">
-    <v-col cols="12" sm="6" v-if="showHeroSection">
+  <v-row class="content px-md-5">
+    <v-col class="pa-md-0" cols="12" sm="6" v-if="showHeroSection">
       <div class="hero">
         <h1 class="hero__title mb-5">
           Send money <br />
@@ -14,15 +14,20 @@
       </div>
     </v-col>
 
-    <v-col cols="12" sm="6" style="position: relative">
-      <div class="hero-form mt-0">
+    <v-col class="pa-md-0" cols="12" sm="6" style="position: relative">
+      <div class="hero-form mt-0 mb-15">
         <component
           v-bind:is="steps[currentStep].component"
           v-bind:params="steps[currentStep].params"
           @submitted="submitted"
           @mobile="showHeroSection = false"
         />
-        <v-overlay color="#fff" opacity="0.7" absolute :value="$auth.loggedIn">
+        <v-overlay
+          color="#f2f2f2"
+          opacity="0.7"
+          absolute
+          :value="$auth.loggedIn"
+        >
         </v-overlay></div
     ></v-col>
   </v-row>
@@ -146,15 +151,38 @@ export default {
 };
 </script>
 
-<style scoped>
-.hero .hero__title {
-  font-size: 45px;
-  font-weight: 500;
-  line-height: 47px;
+<style lang="scss" scoped>
+.content {
+  margin-top: 2rem;
 }
 
-.hero .hero_subtitle {
-  color: #5b5b5b;
-  font-size: 14px;
+.hero {
+  .hero__title {
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 47px;
+  }
+
+  .hero_subtitle {
+    color: #5b5b5b;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 767px) {
+  .content {
+    margin-top: 8rem;
+  }
+
+  .hero {
+    .hero__title {
+      font-size: 50px;
+      font-weight: 900;
+    }
+
+    .hero_subtitle {
+      font-size: 18px;
+    }
+  }
 }
 </style>

@@ -1,24 +1,25 @@
 <template>
   <div>
-    <p>Settings</p>
+    <p>Profile</p>
   </div>
 </template>
 
 <script>
 export default {
   middleware: ["auth", "verify_url_msisdn"],
-  name: "settings",
+  name: "profile",
   layout: "dashboard",
   meta: {
     breadcrumbs: [
       {
-        text: "Settings",
+        text: "Profile",
         disabled: true,
         help: true,
         to: "#",
       },
     ],
   },
+  data: () => ({}),
   methods: {},
   mounted() {},
 };

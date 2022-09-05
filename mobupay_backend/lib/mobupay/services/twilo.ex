@@ -92,6 +92,7 @@ defmodule Mobupay.Services.Twilio do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
            HTTPoison.get(endpoint, headers, options),
          {:ok, json} <- Jason.decode(body) do
+      Logger.info("#{inspect(__MODULE__)} GET response: #{inspect(body)} ")
       {:ok, json}
     end
   end

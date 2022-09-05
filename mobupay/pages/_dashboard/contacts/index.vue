@@ -46,6 +46,16 @@ export default {
   middleware: ["auth", "verify_url_msisdn"],
   name: "contacts",
   layout: "dashboard",
+  meta: {
+    breadcrumbs: [
+      {
+        text: "Contacts",
+        disabled: true,
+        help: true,
+        to: "#",
+      },
+    ],
+  },
   computed: mapGetters(["bankAccounts"]),
   methods: {
     async deleteBankAccount(ref) {

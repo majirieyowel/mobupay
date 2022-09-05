@@ -11,4 +11,7 @@ export default {
   withdrawals(state) {
     return state.withdrawals;
   },
+  breadcrumbs(state) {
+    return state.breadcrumbs;
+  },
 };

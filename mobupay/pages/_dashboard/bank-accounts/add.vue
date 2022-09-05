@@ -59,6 +59,23 @@ export default {
   middleware: ["auth", "verify_url_msisdn"],
   name: "add-bank-account",
   layout: "dashboard",
+  meta: {
+    breadcrumbs: [
+      {
+        text: "Bank Accounts",
+        disabled: false,
+        to: {
+          name: "dashboard-bank-accounts",
+          params: { dashboard: "" },
+        },
+      },
+      {
+        text: "Add",
+        disabled: true,
+        to: "#",
+      },
+    ],
+  },
   data: () => ({
     fetchingBankName: false,
     isLoadingBanks: true,

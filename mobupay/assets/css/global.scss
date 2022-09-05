@@ -1,0 +1,57 @@
+a {
+  text-decoration: none;
+}
+.h-100 {
+  height: 100%;
+}
+
+.r {
+  background-color: red !important;
+}
+.flex--end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.flex-centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.v-messages__message {
+  color: #fb8c00;
+}
+.help-icon {
+  color: #fb8c00 !important;
+  cursor: pointer;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.v-navigation-drawer__content::-webkit-scrollbar {
+  display: none;
+}
+
+.v-navigation-drawer__content {
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.v-main__wrap {
+  padding: 5px;
+
+  .btn--primary {
+    background-color: $primary !important;
+    color: $white !important;
+    text-transform: lowercase;
+    border-radius: 7px;
+  }
+}
+
+@media (min-width: 767px) {
+  .v-main__wrap {
+    padding: 30px;
+  }
+}

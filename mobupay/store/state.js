@@ -4,4 +4,5 @@ export default () => ({
   },
   transactions: [],
   withdrawals: [],
+  breadcrumbs: [],
 });

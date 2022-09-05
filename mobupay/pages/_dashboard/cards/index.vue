@@ -1,16 +1,5 @@
 <template>
   <div>
-    <p>Cards</p>
-
-    <NuxtLink
-      :to="{
-        name: 'dashboard',
-        params: { dashboard: $auth.$state.user.msisdn },
-      }"
-      >Dashboard</NuxtLink
-    >
-    |
-
     <NuxtLink
       :to="{
         name: 'dashboard-cards-add',
@@ -44,6 +33,16 @@ export default {
   middleware: ["auth", "verify_url_msisdn"],
   name: "cards",
   layout: "dashboard",
+  meta: {
+    breadcrumbs: [
+      {
+        text: "Cards",
+        disabled: true,
+        help: true,
+        href: "#",
+      },
+    ],
+  },
   computed: mapGetters(["cards"]),
   methods: {
     async deleteCard(ref) {

@@ -53,7 +53,6 @@ defmodule Mobupay.Services.Redis do
   defp do_set_with_expiration(key, value, expiry) do
     with {:ok, "OK"} <- Redix.command(@process_name, ["SET", key, value]),
          {:ok, 1} <- Redix.command(@process_name, ["EXPIRE", key, expiry]) do
-      IO.inspect(key)
       {:ok, key}
     else
       error ->

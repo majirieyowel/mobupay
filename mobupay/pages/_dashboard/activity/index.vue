@@ -1,20 +1,6 @@
 <template>
   <div>
     <p>Your Activity</p>
-
-    <NuxtLink
-      :to="{
-        name: 'dashboard',
-        params: { dashboard: $auth.$state.user.msisdn },
-      }"
-      >Dashboard</NuxtLink
-    >
-
-    <hr />
-    <br />
-
-    <br />
-    <hr />
   </div>
 </template>
 
@@ -23,6 +9,16 @@ export default {
   middleware: ["auth", "verify_url_msisdn"],
   name: "activity",
   layout: "dashboard",
+  meta: {
+    breadcrumbs: [
+      {
+        text: "Your Activity",
+        disabled: true,
+        help: true,
+        to: "#",
+      },
+    ],
+  },
   data: () => ({}),
   methods: {},
   mounted() {},

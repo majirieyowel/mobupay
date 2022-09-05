@@ -31,7 +31,7 @@ body {
 #main {
   display: table;
   width: 100%;
-  height: 100vh;
+  min-height: 70vh;
   text-align: center;
 }
 
@@ -41,10 +41,14 @@ body {
 }
 
 .fof h1 {
-  font-size: 50px;
+  font-size: 30px;
   display: inline-block;
   padding-right: 12px;
   animation: type 0.5s alternate infinite;
+}
+
+.fof p {
+  font-size: 13px;
 }
 
 @keyframes type {
@@ -53,6 +57,16 @@ body {
   }
   to {
     box-shadow: inset -3px 0px 0px transparent;
+  }
+}
+
+@media (min-width: 767px) {
+  .fof h1 {
+    font-size: 50px;
+  }
+
+  .fof p {
+    font-size: 16px;
   }
 }
 </style>

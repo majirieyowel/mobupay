@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-row align="center">
-      <v-col cols="12" sm="10" md="8" class="py-0 mx-auto">
+      <v-col cols="12" sm="10" md="8" class="py-0 ml-auto">
         <v-alert color="orange" text>
           <p class="ma-0 pa-0 text-xs-5">
             Set a password to secure your account.
