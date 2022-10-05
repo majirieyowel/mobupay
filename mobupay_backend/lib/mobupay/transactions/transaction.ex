@@ -10,13 +10,13 @@ defmodule Mobupay.Transactions.Transaction do
       ref
       to_ref
       from_ref
-      callback_hash
       amount
       status
       from_msisdn
       to_msisdn
       narration
       ip_address
+      is_visible
       device
     }a
 
@@ -30,6 +30,8 @@ defmodule Mobupay.Transactions.Transaction do
              :from_msisdn,
              :to_msisdn,
              :narration,
+             :ip_address,
+             :device,
              :inserted_at
            ]}
 
@@ -37,7 +39,6 @@ defmodule Mobupay.Transactions.Transaction do
     field :ref, :string
     field :to_ref, :string
     field :from_ref, :string
-    field :callback_hash, :string
     field :amount, :integer
     field :status, TransactionStatusEnum
     field :from_msisdn, :string
@@ -45,6 +46,7 @@ defmodule Mobupay.Transactions.Transaction do
     field :narration, :string
     field :ip_address, :string
     field :device, :string
+    field :is_visible, :boolean, default: true
 
     has_one(:ledgers, Ledger)
 

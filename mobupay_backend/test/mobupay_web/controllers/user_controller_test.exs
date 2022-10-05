@@ -30,7 +30,13 @@ defmodule MobupayWeb.UserControllerTest do
 
   describe "create user" do
     test "renders user when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      payload = %{
+        country_code: "some country_code",
+        msisdn: "some msisdn",
+        reference: "some reference"
+      }
+
+      conn = post(conn, Routes.user_path(conn, :create), payload)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = get(conn, Routes.user_path(conn, :show, id))

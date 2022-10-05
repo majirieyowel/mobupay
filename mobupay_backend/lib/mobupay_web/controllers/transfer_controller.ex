@@ -2,12 +2,13 @@ defmodule MobupayWeb.TransferController do
   use MobupayWeb, :controller
 
   alias Mobupay.Helpers.{Response, Utility, Token, ErrorCode}
-  alias Mobupay.Services.Paystack
   alias Mobupay.Transactions
   alias Mobupay.Account
   alias Mobupay.CountryData
-  alias MobupayWeb.ErrorHelpers
   alias Mobupay.MsisdnRepos
+  alias Mobupay.CountryData
+  alias Mobupay.Services.{Twilio}
+  alias MobupayWeb.ErrorHelpers
 
   require Logger
 
@@ -30,7 +31,7 @@ defmodule MobupayWeb.TransferController do
   def index(
         %Plug.Conn{
           assigns: %{
-            current_user: %Account.User{email: email, msisdn: from_msisdn}
+            current_user: %Account.User{email: email, msisdn: from_msisdn} = user
           }
         } = conn,
         %{
@@ -46,30 +47,29 @@ defmodule MobupayWeb.TransferController do
 
     with %Ecto.Changeset{valid?: true} <- Transactions.validate_transaction(params),
          amount <- Utility.remove_decimal(amount),
-         call_back_hash <- Token.generate(30),
+         ref <- Token.generate(:random),
          {:ok, _} <- ensure_no_self_funding(from_msisdn, to_msisdn),
+         {:ok, _} <- ensure_same_country_code(user, to_msisdn),
          {:ok, :verified} <- lookup_msisdn(to_msisdn),
-         {:ok, %{"status" => true, "data" => %{"reference" => ref} = data}} <-
-           Paystack.initialize_transaction(%{
-             amount: amount,
-             email: email,
-             callback: transfer_callback_url(from_msisdn, call_back_hash)
-           }),
          {:ok, %Transactions.Transaction{}} <-
            Transactions.create_transaction(%{
              ref: ref,
-             callback_hash: call_back_hash,
              status: :initiated,
              from_msisdn: from_msisdn,
              to_msisdn: "wait_" <> to_msisdn,
              amount: amount,
              narration: narration,
              ip_address: ip_address,
+             is_visible: false,
              device: device
            }) do
       conn
       |> Response.ok(%{
-        transaction: data,
+        paystack_pk: System.get_env("PAYSTACK_PUBLIC_KEY"),
+        amount: amount,
+        ref: ref,
+        channels: ["card"],
+        email: email,
         funding_channel: "Default"
       })
     else
@@ -247,21 +247,25 @@ defmodule MobupayWeb.TransferController do
         %Plug.Conn{
           assigns: %{current_user: user}
         } = conn,
-        %{"ref" => ref, "consolidator" => consolidator} = params
+        %{"ref" => ref} = params
       ) do
     with %Transactions.Transaction{
-           callback_hash: callback_hash,
            amount: transaction_amount
          } = transaction <-
            Transactions.get_by_ref(ref),
-         {:ok, :hash_match} <- verify_callback_hash(callback_hash, consolidator),
-         {:ok, :verified, %{"currency" => currency} = paystack_data} <-
+         {:ok, %{"currency" => currency} = paystack_data} <-
            verify_on_paystack(ref),
          {:ok, %Transactions.Transaction{}} <-
            Transactions.update_transaction_status(transaction, :floating),
-         {:ok, %Transactions.Transaction{to_msisdn: to_msisdn}} <-
+         {:ok, %Transactions.Transaction{to_msisdn: to_msisdn} = transaction} <-
            Transactions.normalize_to_msisdn(transaction),
+         {:ok, %Transactions.Transaction{}} <-
+           Transactions.update_transaction_visibilty(transaction, true),
          {:ok, card} <- maybe_save_card(user, paystack_data) do
+      Task.Supervisor.async_nolink(Mobupay.TaskSupervisor, fn ->
+        notify_receiver(transaction, currency)
+      end)
+
       conn
       |> Response.ok(%{
         to_msisdn: to_msisdn,
@@ -270,26 +274,16 @@ defmodule MobupayWeb.TransferController do
         card: card
       })
     else
-      nil ->
+      %Transactions.Transaction{} ->
         conn
         |> Response.error(
           404,
           "E#{ErrorCode.get("transaction_not_found")} - Unable to verify transaction"
         )
 
-      {:error, :hash_mismatch} ->
+      {:error, message} ->
         conn
-        |> Response.error(
-          400,
-          "E#{ErrorCode.get("callback_hash_mismatch")} - Unable to verify transaction"
-        )
-
-      {:error, :not_verified} ->
-        conn
-        |> Response.error(
-          400,
-          "E#{ErrorCode.get("transaction_not_successful_on_paystack")} - Unable to verify transaction"
-        )
+        |> Response.error(400, message)
 
       error ->
         Logger.error(
@@ -302,6 +296,30 @@ defmodule MobupayWeb.TransferController do
           "E#{ErrorCode.get("unhandled_transaction_verification_error")} - Unable to verify transaction"
         )
     end
+  end
+
+  def notify_receiver(
+        %Transactions.Transaction{
+          to_msisdn: to_msisdn,
+          from_msisdn: from_msisdn,
+          amount: amount
+        },
+        currency
+      ) do
+    formatted_amount = Number.Currency.number_to_currency(amount / 100, unit: currency)
+
+    frontend_url = String.trim_trailing(System.get_env("MOBUPAY_FRONTEND_URL"), "/")
+
+     message =
+      case Account.msisdn_exists?(to_msisdn) do
+        true ->
+          "You received #{formatted_amount} from #{from_msisdn}. Login on #{frontend_url}/login to accept."
+
+        false ->
+          "You received #{formatted_amount} from #{from_msisdn}. Register on #{frontend_url} to accept."
+      end
+
+    Twilio.send(to_msisdn, message)
   end
 
   def accept(
@@ -367,13 +385,13 @@ defmodule MobupayWeb.TransferController do
         } = conn,
         %{"ref" => ref} = params
       ) do
-    Logger.info("Received request to refuse payment with params #{inspect(params)}")
+    Logger.info("Received request to reject payment with params #{inspect(params)}")
 
     with %Transactions.Transaction{status: :floating} = transaction <-
            Transactions.get_by_ref(ref),
          {:ok, :msisdn_match} <- to_msisdn_match(user, transaction),
          {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_status(transaction, :refused),
+           Transactions.update_transaction_status(transaction, :rejected),
          {:ok, %Transactions.Ledger{}} <-
            maybe_create_ledger_entry(transaction, :plus, :from_msisdn) do
       conn
@@ -469,10 +487,6 @@ defmodule MobupayWeb.TransferController do
     end
   end
 
-  defp transfer_callback_url(msisdn, hash) do
-    System.get_env("MOBUPAY_FRONTEND_URL") <> "#{msisdn}/transfer?consolidator=#{hash}"
-  end
-
   defp to_msisdn_match(%Account.User{msisdn: msisdn}, %Transactions.Transaction{
          to_msisdn: to_msisdn
        }) do
@@ -494,13 +508,6 @@ defmodule MobupayWeb.TransferController do
     end
   end
 
-  defp verify_callback_hash(hash, consolidator) do
-    cond do
-      hash === consolidator -> {:ok, :hash_match}
-      hash !== consolidator -> {:error, :hash_mismatch}
-    end
-  end
-
   defp maybe_create_ledger_entry(transaction, type, msisdn_field) do
     case Transactions.ledger_entry_exists?(transaction, msisdn_field) do
       true ->
@@ -512,12 +519,13 @@ defmodule MobupayWeb.TransferController do
   end
 
   defp verify_on_paystack(ref) do
-    case Paystack.verify_transaction(ref) do
+    case Application.get_env(:mobupay, :paystack_service).verify_transaction(ref) do
       {:ok, %{"status" => true, "data" => %{"status" => "success"} = data}} ->
-        {:ok, :verified, data}
+        {:ok, data}
 
       _ ->
-        {:error, :not_verified}
+        {:error,
+         "E#{ErrorCode.get("transaction_not_successful_on_paystack")} - Unable to verify transaction"}
     end
   end
 
@@ -528,7 +536,7 @@ defmodule MobupayWeb.TransferController do
   defp maybe_save_card(_user, _params), do: {:ok, %{}}
 
   defp paystack_charge_auth(params) do
-    case Paystack.charge_authorization(params) do
+    case Application.get_env(:mobupay, :paystack_service).charge_authorization(params) do
       {:ok, %{"status" => true, "data" => %{"status" => "success"}} = paystack_data} ->
         {:ok, paystack_data}
 
@@ -540,12 +548,26 @@ defmodule MobupayWeb.TransferController do
     end
   end
 
-  def ensure_no_self_funding(user_msisdn, to_msisdn) do
+  defp ensure_no_self_funding(user_msisdn, to_msisdn) do
     if user_msisdn === to_msisdn do
       {:error,
        "E#{ErrorCode.get("transaction_to_same_msisdn")} - Cannot transfer to your phone number."}
     else
       {:ok, to_msisdn}
+    end
+  end
+
+  defp ensure_same_country_code(%Account.User{country: country}, to_msisdn) do
+    %{"dialing_code" => current_user_dialing_code, "name" => country_name} =
+      Map.get(CountryData.get_by(:country), String.downcase(country))
+
+    case String.starts_with?(to_msisdn, current_user_dialing_code) do
+      true ->
+        {:ok, current_user_dialing_code}
+
+      false ->
+        {:error,
+         "You can only send money to mobile numbers in #{country_name} (+#{current_user_dialing_code})"}
     end
   end
 

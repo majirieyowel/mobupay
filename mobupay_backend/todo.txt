@@ -20,6 +20,8 @@ generating Statements
 Run with docker
 Add customer ref to withdrawals
 Option to add new bank account from withdrawal page
+Add currency to transactions table
+Make onboarding password field togglable
 
 
 

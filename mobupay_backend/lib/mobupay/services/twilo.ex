@@ -21,7 +21,6 @@ defmodule Mobupay.Services.Twilio do
       Authorization: "Basic #{authorization_token}",
       "Content-Type": "application/x-www-form-urlencoded"
     ]
-
     options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 
     lookup_response = get_request(endpoint, headers, options)

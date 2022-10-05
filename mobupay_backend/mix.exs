@@ -54,7 +54,14 @@ defmodule Mobupay.MixProject do
       {:guardian, "~> 2.2.1"},
       {:timex, "~> 3.0"},
       {:scrivener_ecto, "~> 2.0"},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+      {:number, "~> 1.0.1"},
+      {:elixir_uuid, "~> 1.2" },
+      {:nimble_csv, "~> 1.1"},
+      {:csv, "~> 2.5"},
+      {:ex_machina, "~> 2.7.0", only: :test},
+      {:faker, "~> 0.17", only: :test},
+      {:mox, "~> 1.0.2", only: :test},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
     ]
   end
 

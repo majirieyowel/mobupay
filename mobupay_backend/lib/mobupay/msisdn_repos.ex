@@ -6,7 +6,6 @@ defmodule Mobupay.MsisdnRepos do
 
   alias Mobupay.MsisdnRepos.Msisdn
   alias Mobupay.Helpers.Msisdn, as: MsisdnHelper
-  alias Mobupay.Services.Twilio
 
   def save_msisdn(country_code, msisdn) do
     %Msisdn{}
@@ -23,7 +22,7 @@ defmodule Mobupay.MsisdnRepos do
         format_response()
 
       false ->
-        Twilio.lookup(msisdn)
+        Application.get_env(:mobupay, :twilio_service).lookup(msisdn)
         |> format_response()
     end
   end

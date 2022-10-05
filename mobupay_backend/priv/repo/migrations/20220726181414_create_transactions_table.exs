@@ -9,7 +9,6 @@ defmodule Mobupay.Repo.Migrations.CreateTransactionsTable do
       add(:ref, :string, null: false)
       add(:from_ref, :string, null: false)
       add(:to_ref, :string, null: false)
-      add(:callback_hash, :string)
       add(:amount, :integer, null: false)
       add(:status, :transaction_status, null: false)
       add(:from_msisdn, :string, null: false)
@@ -17,11 +16,11 @@ defmodule Mobupay.Repo.Migrations.CreateTransactionsTable do
       add(:narration, :string)
       add(:ip_address, :string, null: false)
       add(:device, :string, null: false)
+      add(:is_visible, :boolean, default: true)
 
       timestamps()
     end
 
     create(unique_index(:transactions, :ref))
-    create(unique_index(:transactions, :callback_hash))
   end
 end

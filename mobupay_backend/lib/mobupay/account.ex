@@ -177,6 +177,12 @@ defmodule Mobupay.Account do
     |> Repo.exists?()
   end
 
+  def list_cards(%User{id: user_id}) do
+    Card
+    |> where([c], c.user_id == ^user_id)
+    |> Repo.all()
+  end
+
   def get_card_by_ref(ref) do
     Card
     |> where([c], c.ref == ^ref)

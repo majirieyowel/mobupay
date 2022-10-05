@@ -71,6 +71,7 @@ defmodule Mobupay.Services.Paystack do
     post_request(endpoint, payload, headers, options)
   end
 
+  #TODO: obsolete
   @spec initialize_transaction(map()) :: {:ok, map()} | {:error, any()}
   def initialize_transaction(%{amount: amount, email: email, callback: callback}) do
     base_url = System.get_env("PAYSTACK_BASE_URL")

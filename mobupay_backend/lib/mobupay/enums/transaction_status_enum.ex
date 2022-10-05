@@ -6,7 +6,7 @@ defmodule Mobupay.TransactionStatusEnum do
       :initiated,
       :floating,
       :accepted,
-      :refused,
+      :rejected,
       :reclaimed,
       :abandoned
     ]

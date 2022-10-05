@@ -3,6 +3,7 @@ defmodule MobupayWeb.ContactController do
 
   alias Mobupay.Account
   alias Mobupay.Helpers.{Response, Token, Pagination}
+  alias Mobupay.Helpers.Msisdn
   require Logger
 
   # TODO: create contacts schema, create and delete functions, persist onboading hash to local storage
@@ -74,4 +75,97 @@ defmodule MobupayWeb.ContactController do
 
     # Account.delete_bank_account()
   end
+
+  def import(%Plug.Conn{assigns: %{current_user: %{country: country}}} = conn, %{
+        "contact" => %Plug.Upload{content_type: "text/csv", path: temp_path, filename: filename}
+      }) do
+    {:ok, %File.Stat{size: size}} = File.stat(temp_path)
+
+    cond do
+      size <= 100_000 ->
+        temp_path
+        |> Path.expand(__DIR__)
+        |> File.stream!()
+        |> CSV.decode!()
+        |> Enum.into([], &parse_contact/1)
+        |> cleanup_contacts_list
+        |> Enum.map(fn %{msisdn: msisdn} = item ->
+          {:ok, updated_msisdn} = Msisdn.format(country, msisdn)
+          %{item | msisdn: updated_msisdn}
+        end)
+        |> IO.inspect()
+
+      size > 100_00 ->
+        # background process
+        extension = Path.extname(filename)
+        destination = "priv/static/csv/#{UUID.uuid1()}#{extension}"
+        File.cp(temp_path, destination) |> IO.inspect()
+    end
+
+    conn
+  end
+
+  def cleanup_contacts_list(list) do
+    list
+    |> Enum.filter(fn %{name: name, msisdn: msisdn} ->
+      String.length(name) > 2 && String.length(msisdn) > 10
+    end)
+  end
+
+  def parse_contact(item) do
+    filtered =
+      item
+      |> Enum.filter(fn x -> x !== "" end)
+
+    %{
+      name: extract_name(filtered),
+      msisdn: extract_msisdn(filtered)
+    }
+  end
+
+  def extract_name(list) do
+    list
+    |> Enum.filter(fn x ->
+      x
+      |> String.replace(~r/\s+/, "")
+      |> Integer.parse()
+      |> case do
+        {_number, _other} ->
+          false
+
+        :error ->
+          true
+      end
+    end)
+    |> filter_name_head
+  end
+
+  def extract_msisdn(list) do
+    list
+    |> Enum.filter(fn x ->
+      x
+      |> String.replace(~r/\s+/, "")
+      |> Integer.parse()
+      |> case do
+        {_number, _other} ->
+          true
+
+        :error ->
+          false
+      end
+    end)
+    |> filter_msisdn_head
+  end
+
+  def filter_name_head([]), do: ""
+
+  def filter_name_head(list) do
+    [head | _tail] = list
+
+    head
+  end
+
+  def filter_msisdn_head([]), do: ""
+
+  def filter_msisdn_head([head | _tail]), do: String.replace(head, ~r/\s+/, "")
 end

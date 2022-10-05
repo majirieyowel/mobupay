@@ -2,14 +2,14 @@ defmodule Mobupay.Helpers.Response do
   import Plug.Conn, only: [put_status: 2, put_resp_content_type: 2]
   import Phoenix.Controller, only: [json: 2]
 
-  def ok(conn, data \\ %{}, status \\ :ok, message \\ "Successful") do
+  def ok(conn, data \\ %{}, status \\ :ok, _message \\ "successful") do
     conn
     |> put_status(status)
     |> put_resp_content_type("application/json")
     |> json(%{
       status: true,
-      data: data,
-      message: message
+      data: data
+      # message: message
     })
   end
 

@@ -14,6 +14,7 @@ defmodule Mobupay.Transactions do
 
   def list_user_transactions(%Account.User{msisdn: msisdn}, params \\ %{}) do
     Transaction
+    |> where([t], t.is_visible == true)
     |> where([t], t.from_msisdn == ^msisdn)
     |> or_where([t], t.to_msisdn == ^msisdn)
     |> order_by([t], desc: t.id)
@@ -45,6 +46,10 @@ defmodule Mobupay.Transactions do
         ) :: any
   def update_transaction_status(transaction, status) do
     Repo.update(Ecto.Changeset.change(transaction, status: status))
+  end
+
+  def update_transaction_visibilty(transaction, visibility) do
+    Repo.update(Ecto.Changeset.change(transaction, is_visible: visibility))
   end
 
   def normalize_to_msisdn(%Transaction{to_msisdn: msisdn} = transaction) do
@@ -121,6 +126,12 @@ defmodule Mobupay.Transactions do
       })
 
     Repo.insert(changeset)
+  end
+
+  def get_transaction_ledger(transaction_id) do
+    Ledger
+    |> where([l], l.transaction_id == ^transaction_id)
+    |> Repo.one()
   end
 
   defp get_ledger_amount(type, amount) do

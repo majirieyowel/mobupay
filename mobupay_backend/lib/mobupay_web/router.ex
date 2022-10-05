@@ -10,7 +10,7 @@ defmodule MobupayWeb.Router do
     plug(MobupayWeb.Plugs.AssignGuardianResource)
   end
 
-  scope "/api/v1", MobupayWeb, as: :api_v1 do
+  scope "/api/v1", MobupayWeb, as: :v1 do
     pipe_through :api
 
     post "/session/login", SessionController, :login
@@ -48,11 +48,11 @@ defmodule MobupayWeb.Router do
     post "/withdraw/complete", WithdrawalController, :complete
 
     # Business
-    resources "/business", BusinessController
-
+    # resources "/business", BusinessController
 
     # contact
     get "/contact/search", ContactController, :search
+    post "contact/import/csv", ContactController, :import
     resources "/contact", ContactController
 
     resources "/bank-account", BankAccountController, only: [:create, :delete]

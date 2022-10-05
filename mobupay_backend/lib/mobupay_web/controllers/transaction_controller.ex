@@ -119,7 +119,6 @@ defmodule MobupayWeb.TransactionController do
       {:ok, %{"status" => true, "data" => %{"reference" => ref} = data}} ->
         Transactions.create_transaction(%{
           ref: ref,
-          callback_hash: call_back_hash,
           status: :initiated,
           type: :self_fund,
           msisdn: msisdn,
@@ -161,10 +160,9 @@ defmodule MobupayWeb.TransactionController do
         } = conn,
         %{"ref" => ref, "consolidator" => consolidator} = params
       ) do
-    with %Transactions.Transaction{callback_hash: callback_hash, amount: transaction_amount} =
+    with %Transactions.Transaction{amount: transaction_amount} =
            transaction <-
            Transactions.get_by_ref(ref),
-         {:ok, :hash_match} <- verify_callback_hash(callback_hash, consolidator),
          {:ok, :verified, paystack_data} <-
            verify_on_paystack(ref),
          {:ok, %Transactions.Transaction{}} <-
@@ -188,12 +186,6 @@ defmodule MobupayWeb.TransactionController do
           "E#{ErrorCode.get("transaction_not_found")} - Unable to verify transaction"
         )
 
-      {:error, :hash_mismatch} ->
-        conn
-        |> Response.error(
-          400,
-          "E#{ErrorCode.get("callback_hash_mismatch")} - Unable to verify transaction"
-        )
 
       {:error, :not_verified} ->
         conn
@@ -235,12 +227,6 @@ defmodule MobupayWeb.TransactionController do
     |> Response.ok(Pagination.format("transactions", transactions))
   end
 
-  defp verify_callback_hash(hash, consolidator) do
-    cond do
-      hash === consolidator -> {:ok, :hash_match}
-      hash !== consolidator -> {:error, :hash_mismatch}
-    end
-  end
 
   defp verify_on_paystack(ref) do
     case Paystack.verify_transaction(ref) do

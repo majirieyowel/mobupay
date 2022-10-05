@@ -8,6 +8,7 @@ defmodule Mobupay.Account.User do
 
   @derive {Jason.Encoder,
            only: [:msisdn, :email, :country, :ref, :bank_accounts, :cards, :balance]}
+           
   schema "users" do
     field :email, :string
     field :msisdn, :string

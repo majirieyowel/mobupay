@@ -1,6 +1,5 @@
 {
     "add_email_to_proceed": "021",
-    "callback_hash_mismatch": "022",
     "transaction_not_found": "023",
     "transaction_not_successful_on_paystack": "024",
     "unhandled_transaction_verification_error": "025",

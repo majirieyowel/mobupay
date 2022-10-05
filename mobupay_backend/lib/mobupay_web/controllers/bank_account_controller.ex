@@ -34,6 +34,7 @@ defmodule MobupayWeb.BankAccountController do
 
   def delete(%Plug.Conn{assigns: %{current_user: user}} = conn, %{"id" => bank_account_ref}) do
     Logger.info("Received request to delete bank account with ref #{inspect(bank_account_ref)}")
+    Process.sleep(4000)
 
     case Account.list_bank_account_by_ref(bank_account_ref) do
       %Account.BankAccount{user_id: user_id} = bank_account ->
