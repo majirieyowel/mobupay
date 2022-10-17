@@ -29,12 +29,12 @@
             <v-col class="d-flex justify-end align-center">
               <div v-if="$auth.loggedIn">
                 <NuxtLink
-                  class="grey--text text-5 text-decoration-none"
+                  class="primary--text text-5 text-decoration-none"
                   :to="{
                     name: 'dashboard',
                     params: { dashboard: $auth.$state.user.msisdn },
                   }"
-                  >Dashboard
+                  >+{{ $auth.$state.user.msisdn }}
                 </NuxtLink>
               </div>
               <div v-else>

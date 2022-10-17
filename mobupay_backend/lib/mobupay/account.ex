@@ -89,11 +89,18 @@ defmodule Mobupay.Account do
 
   # Contacts
 
-  def list_contacts(user_id, params) do
+  @spec list_contacts(integer()) :: [%Mobupay.Account.Contact{}]
+  def list_contacts(user_id) do
     Contact
     |> where([co], co.user_id == ^user_id)
-    |> Repo.paginate(params)
+    |> Repo.all()
   end
+
+  # def list_contacts(user_id, params) do
+  #   Contact
+  #   |> where([co], co.user_id == ^user_id)
+  #   |> Repo.paginate(params)
+  # end
 
   def create_contact(user, bank_account_params) do
     changeset =
@@ -209,7 +216,7 @@ defmodule Mobupay.Account do
     |> Repo.insert()
   end
 
-    def get_withdrawal_by_ref(ref) do
+  def get_withdrawal_by_ref(ref) do
     Withdrawal
     |> where([w], w.ref == ^ref)
     |> Repo.one()

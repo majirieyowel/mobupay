@@ -6,7 +6,7 @@ defmodule Mobupay.Account.Contact do
 
   alias Mobupay.Account
 
-  @derive {Jason.Encoder, only: [:ref, :name, :msisdn, :country_code, :inserted_at]}
+  @derive {Jason.Encoder, only: [:ref, :name, :msisdn, :inserted_at]}
 
   @required_attrs ~w{
       ref

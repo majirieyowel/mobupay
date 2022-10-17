@@ -3,5 +3,7 @@ export default (error, caller) => {
     caller.$toast.error(error.response.data.message);
   } else if (error.response.status == 422) {
     caller.$toast.error(Object.values(error.response.data.error)[0][0]);
+  } else {
+    caller.$toast.error("An error has occcured! We have been notified!");
   }
 };

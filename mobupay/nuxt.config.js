@@ -126,7 +126,7 @@ export default {
 
   env: {
     ipURL: "https://httpbin.org/ip",
-    paystackBanksEndpoint: "https://api.paystack.co/bank",
+    banksListEndpoint: "https://api.paystack.co/bank",
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

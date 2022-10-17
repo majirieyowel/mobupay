@@ -5,4 +5,5 @@ export default () => ({
   transactions: [],
   withdrawals: [],
   breadcrumbs: [],
+  sendDialog: false,
 });

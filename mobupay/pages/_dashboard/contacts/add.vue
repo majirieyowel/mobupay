@@ -126,7 +126,7 @@ export default {
   mounted() {},
   async fetch() {
     try {
-      const banks = await this.$axios.$get(process.env.paystackBanksEndpoint);
+      const banks = await this.$axios.$get(process.env.banksListEndpoint);
 
       let filtered = banks.data.filter((bank) => {
         return bank.code !== "";

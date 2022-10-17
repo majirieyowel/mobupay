@@ -3,25 +3,6 @@
     <div>
       <p>Fund Your Phone number</p>
 
-      <NuxtLink
-        :to="{
-          name: 'dashboard',
-          params: { dashboard: $auth.$state.user.msisdn },
-        }"
-        >Dashboard</NuxtLink
-      >
-
-      <NuxtLink
-        :to="{
-          name: 'dashboard-send',
-          params: { dashboard: $auth.$state.user.msisdn },
-        }"
-      >
-        &lt;&lt; Send Options</NuxtLink
-      >
-      <hr />
-      <br />
-
       <div v-if="step == 'fund'">
         <v-row align="center">
           <v-col class="d-flex" cols="12" sm="6">
@@ -103,9 +84,6 @@
           </div>
         </div>
       </div>
-
-      <br />
-      <hr />
     </div>
   </div>
 </template>

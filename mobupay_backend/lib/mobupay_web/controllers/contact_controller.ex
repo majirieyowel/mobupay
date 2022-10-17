@@ -2,22 +2,14 @@ defmodule MobupayWeb.ContactController do
   use MobupayWeb, :controller
 
   alias Mobupay.Account
-  alias Mobupay.Helpers.{Response, Token, Pagination}
+  alias Mobupay.Helpers.{Response, Token}
   alias Mobupay.Helpers.Msisdn
   require Logger
 
-  # TODO: create contacts schema, create and delete functions, persist onboading hash to local storage
-
-  def index(%Plug.Conn{assigns: %{current_user: %{id: user_id}}} = conn, params) do
-    case Account.list_contacts(user_id, params) do
-      %Scrivener.Page{} = data ->
-        conn
-        |> Response.ok(Pagination.format(:contacts, data))
-
-      _ ->
-        conn
-        |> Response.error(500, "Currently unable to fetch your contacts")
-    end
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(%Plug.Conn{assigns: %{current_user: %{id: user_id}}} = conn, _params) do
+    conn
+    |> Response.ok(Account.list_contacts(user_id))
   end
 
   def search(%Plug.Conn{assigns: %{current_user: %{id: user_id}}} = conn, %{"query" => query}) do

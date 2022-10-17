@@ -72,7 +72,7 @@ export default {
     submitting: false,
     showPassword: false,
     form: {
-      msisdn: "08108125270",
+      msisdn: "2348108125270",
       password: "@Nelie&e12",
     },
     rules: {

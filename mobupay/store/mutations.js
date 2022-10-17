@@ -16,6 +16,7 @@ export default {
       }
     );
   },
+
   removeCard(state, ref) {
     state.auth.user.cards = state.auth.user.cards.filter((card) => {
       return card.ref !== ref;
@@ -44,6 +45,7 @@ export default {
       }
     });
   },
+
   transactionButtonLoadingStatus(state, { status, ref, producer }) {
     state.transactions.map((item) => {
       if (item.ref == ref) {
@@ -63,5 +65,8 @@ export default {
   },
   setBreadcrumb(state, data) {
     state.breadcrumbs = data;
+  },
+  setSendDialog(state, status) {
+    state.sendDialog = status;
   },
 };

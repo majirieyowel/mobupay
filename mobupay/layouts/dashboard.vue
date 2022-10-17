@@ -7,7 +7,7 @@
       <v-container fluid>
         <v-row>
           <v-col cols="12" class="d-flex align-center justify-center">
-            <a :href="$auth.$state.user.msisdn" aria-label="Mobupay logo">
+            <a :href="'/' + $auth.$state.user.msisdn" aria-label="Mobupay logo">
               <img
                 class="logo"
                 src="~/assets/img/mobupay.svg"
@@ -40,29 +40,26 @@
           </NuxtLink>
         </div>
 
-        <div class="omit--dashboard">
-          <v-list-group prepend-icon="mdi-bank-transfer" no-action>
-            <template v-slot:activator>
-              <v-list-item-content>
-                <v-list-item-title text="Transfer">Transfer</v-list-item-title>
-              </v-list-item-content>
-            </template>
-
+        <!--
+          <div class="omit--dashboard">
             <NuxtLink
               class="text-decoration-none"
               :to="{
-                name: 'dashboard-help-center',
+                name: 'dashboard-send',
                 params: { dashboard: $auth.$state.user.msisdn },
               }"
             >
-              <v-list-item link>
+              <v-list-item link @click.stop.prevent="displayOptionsDialog">
+                <v-list-item-icon>
+                  <v-icon>mdi-send-outline</v-icon>
+                </v-list-item-icon>
                 <v-list-item-content>
                   <v-list-item-title>Send</v-list-item-title>
                 </v-list-item-content>
               </v-list-item>
             </NuxtLink>
-          </v-list-group>
-        </div>
+          </div>
+        -->
 
         <div class="omit--dashboard">
           <NuxtLink
@@ -78,6 +75,25 @@
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title>Invoice</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </NuxtLink>
+        </div>
+
+        <div class="omit--dashboard">
+          <NuxtLink
+            class="text-decoration-none"
+            :to="{
+              name: 'dashboard-withdraw',
+              params: { dashboard: $auth.$state.user.msisdn },
+            }"
+          >
+            <v-list-item link>
+              <v-list-item-icon>
+                <v-icon>mdi-transfer-down</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Withdraw</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </NuxtLink>
@@ -121,43 +137,26 @@
           </NuxtLink>
         </div>
 
-        <div class="omit--dashboard">
-          <NuxtLink
-            class="text-decoration-none"
-            :to="{
-              name: 'dashboard-cards',
-              params: { dashboard: $auth.$state.user.msisdn },
-            }"
-          >
-            <v-list-item link>
-              <v-list-item-icon>
-                <v-icon>mdi-card-account-details-outline</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>Cards</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </NuxtLink>
-        </div>
-
-        <div class="omit--dashboard">
-          <NuxtLink
-            class="text-decoration-none"
-            :to="{
-              name: 'dashboard-profile',
-              params: { dashboard: $auth.$state.user.msisdn },
-            }"
-          >
-            <v-list-item link>
-              <v-list-item-icon>
-                <v-icon>mdi-account-circle-outline</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>Profile</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </NuxtLink>
-        </div>
+        <!--
+          <div class="omit--dashboard">
+            <NuxtLink
+              class="text-decoration-none"
+              :to="{
+                name: 'dashboard-cards',
+                params: { dashboard: $auth.$state.user.msisdn },
+              }"
+            >
+              <v-list-item link>
+                <v-list-item-icon>
+                  <v-icon>mdi-card-account-details-outline</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>Cards</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </NuxtLink>
+          </div>
+        -->
 
         <div class="omit--dashboard">
           <NuxtLink
@@ -178,7 +177,7 @@
           </NuxtLink>
         </div>
 
-        <div class="omit--dashboard">
+        <!-- <div class="omit--dashboard">
           <NuxtLink
             class="text-decoration-none"
             :to="{
@@ -195,7 +194,8 @@
               </v-list-item-content>
             </v-list-item>
           </NuxtLink>
-        </div>
+        </div> 
+      -->
 
         <div class="omit--dashboard">
           <NuxtLink
@@ -248,6 +248,47 @@
 
     <v-main>
       <Nuxt />
+
+      <v-dialog
+        @click:outside="$store.commit('setSendDialog', false)"
+        v-model="sendDialog"
+        width="500"
+        content-class="send-dialog"
+      >
+        <v-card>
+          <v-card-subtitle>
+            <h3 class="_title">Select sending option</h3></v-card-subtitle
+          >
+          <v-card-actions class="d-flex justify-space-between pa-0">
+            <v-container>
+              <v-row class="justify-space-between">
+                <v-col
+                  cols="5"
+                  class="pa-0 item"
+                  @click="navigate('dashboard-send-self')"
+                >
+                  <p class="text-center">
+                    <v-icon>mdi-phone-incoming</v-icon>
+                    <br />
+                    Your number
+                  </p>
+                </v-col>
+                <v-col
+                  cols="5"
+                  class="pa-0 item"
+                  @click="navigate('dashboard-send')"
+                >
+                  <p class="text-center">
+                    <v-icon>mdi-phone-outgoing</v-icon>
+                    <br />
+                    Other number
+                  </p>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-main>
   </v-app>
 </template>
@@ -257,18 +298,31 @@ import { mapGetters } from "vuex";
 
 export default {
   name: "DashboardLayout",
-  computed: mapGetters(["breadcrumbs"]),
+  computed: mapGetters(["breadcrumbs", "sendDialog"]),
   data() {
     return {
-      drawer: false,
+      drawer: true,
       list: true,
     };
   },
-  mounted() {
-    // window.addEventListener("resize", () => {
-    //   console.log(screen.width);
-    // });
+  methods: {
+    displayOptionsDialog(e) {
+      this.$store.commit("setSendDialog", true);
+    },
+    navigate(location) {
+      this.$store.commit("setSendDialog", false);
+      this.$router.push({
+        name: location,
+        params: { dashboard: this.$auth.$state.user.msisdn },
+      });
+    },
   },
+  beforeMount() {
+    if (screen.width < 600) {
+      this.drawer = false;
+    }
+  },
+  mounted() {},
 };
 </script>
 
@@ -283,7 +337,8 @@ export default {
     color: $white;
   }
   .v-list-item {
-    background: linear-gradient(191deg, #33acf4 28.93%, #0052ff 76.95%);
+    // background: linear-gradient(191deg, #33acf4 28.93%, #0052ff 76.95%);
+    background: $primary;
   }
   .v-icon {
     color: $white;
@@ -294,7 +349,8 @@ export default {
     color: $white;
   }
   .v-list-item {
-    background: linear-gradient(191deg, #33acf4 28.93%, #0052ff 76.95%);
+    // background: linear-gradient(191deg, #33acf4 28.93%, #0052ff 76.95%);
+    background: $primary;
   }
   .v-icon {
     color: $white;
@@ -309,7 +365,41 @@ export default {
   padding-left: 2px;
 }
 
-.v-breadcrumbs {
-  // padding: 0px;
+.send-dialog {
+  ._title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 50px;
+    color: #1976d2;
+  }
+
+  p {
+    color: #666666 !important;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .item {
+    min-height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    cursor: pointer;
+    &:hover {
+      background: #eee;
+    }
+  }
+
+  .v-icon {
+    font-size: 30px;
+    color: #ff9800;
+    padding-bottom: 7px;
+  }
+
+  .v-card {
+    padding: 20px;
+  }
 }
 </style>

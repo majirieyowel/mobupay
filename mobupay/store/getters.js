@@ -14,4 +14,7 @@ export default {
   breadcrumbs(state) {
     return state.breadcrumbs;
   },
+  sendDialog(state) {
+    return state.sendDialog;
+  },
 };

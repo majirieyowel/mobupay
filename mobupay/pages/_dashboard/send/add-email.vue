@@ -2,17 +2,6 @@
   <div>
     <p>ADD YOUR EMAIL</p>
 
-    <NuxtLink
-      :to="{
-        name: 'dashboard',
-        params: { dashboard: $auth.$state.user.msisdn },
-      }"
-      >Dashboard</NuxtLink
-    >
-
-    <hr />
-    <br />
-
     <p>Before creating your first transaction please add your email address</p>
     <p>This is for transactions notifications only</p>
 
@@ -30,9 +19,6 @@
         >
       </v-col>
     </v-row>
-
-    <br />
-    <hr />
   </div>
 </template>
 
@@ -56,7 +42,7 @@ export default {
         this.$toast.success("Email added succcessfully!");
 
         this.$router.push({
-          name: "dashboard-funding-options",
+          name: "dashboard-send-options",
           params: { dashboard: this.$auth.$state.user.msisdn },
         });
       } catch (error) {

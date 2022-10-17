@@ -20,17 +20,15 @@
               <v-icon right> mdi-cash-plus </v-icon>
             </v-btn>
 
-            <NuxtLink
-              :to="{
-                name: 'dashboard-funding-options',
-                params: { dashboard: $auth.$state.user.msisdn },
-              }"
+            <v-btn
+              @click="$store.commit('setSendDialog', true)"
+              color="#36b26c"
+              small
+              class="send-btn white--text"
             >
-              <v-btn color="#36b26c" small class="send-btn white--text">
-                Send
-                <v-icon right class="send-icon"> mdi-send-outline</v-icon>
-              </v-btn>
-            </NuxtLink>
+              Send
+              <v-icon right class="send-icon"> mdi-send-outline</v-icon>
+            </v-btn>
           </div>
         </div>
       </v-col>
@@ -66,7 +64,7 @@
 
                       <th class="text-left">Reference</th>
                       <th class="text-left">Date&nbsp;Created</th>
-                      <th class="text-left">Action</th>
+                      <th class="text-left table--action">Action</th>
                     </tr>
                   </thead>
                   <tbody v-if="transactions.length">
@@ -78,7 +76,15 @@
                             : "debit"
                         }}
                       </td>
-                      <td>{{ item.status }}</td>
+                      <td>
+                        {{ item.status }}
+                        <v-icon
+                          @click="showHelper(item.status)"
+                          small
+                          class="help-icon"
+                          >mdi-help-circle-outline</v-icon
+                        >
+                      </td>
                       <td>
                         {{
                           $auth.$state.user.msisdn == item.from_msisdn
@@ -111,38 +117,48 @@
                       <td>{{ $moment(item.inserted_at).calendar() }}</td>
                       <td>
                         <v-btn
-                          :loading="item.refuse_loading"
+                          :loading="item.reject_loading"
                           v-if="
                             item.status === 'floating' &&
                             $auth.$state.user.msisdn == item.to_msisdn
                           "
-                          @click="handle(item.ref, 'refuse')"
+                          @click="rejectDialogue(item)"
                           outlined
                           x-small
                           color="error"
-                          >Refuse</v-btn
+                          >Reject</v-btn
                         >
+                        &nbsp;
+                        <v-btn
+                          @click="triggerTransactionDialogue(item)"
+                          color="primary"
+                          outlined
+                          x-small
+                          >View</v-btn
+                        >
+                        &nbsp;
                         <v-btn
                           v-if="
                             item.status === 'floating' &&
                             $auth.$state.user.msisdn == item.to_msisdn
                           "
                           :loading="item.accept_loading"
-                          @click="handle(item.ref, 'accept')"
+                          @click="acceptDialogue(item)"
                           outlined
                           x-small
                           color="success"
                           >Accept</v-btn
                         >
+                        &nbsp;
 
                         <v-btn
                           :loading="item.reclaim_loading"
-                          @click="confirmReclaim(item.ref)"
+                          @click="reclaimDialogue(item)"
                           v-if="
                             item.status === 'floating' &&
                             $auth.$state.user.msisdn == item.from_msisdn
                           "
-                          color="primary"
+                          color="warning"
                           outlined
                           x-small
                           >Reclaim</v-btn
@@ -153,7 +169,14 @@
                   <tbody v-else>
                     <tr>
                       <td style="text-align: center" colspan="8">
-                        No Transactions
+                        <div class="mt-5">
+                          <v-icon x-large color="rgb(209 208 208)"
+                            >mdi-archive-outline</v-icon
+                          >
+                          <h3 class="no-content">
+                            Your transactions will show here.
+                          </h3>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -200,7 +223,14 @@
                       <tbody v-else>
                         <tr>
                           <td style="text-align: center" colspan="6">
-                            No Withdrawals
+                            <div class="mt-5">
+                              <v-icon x-large color="rgb(209 208 208)"
+                                >mdi-archive-alert-outline</v-icon
+                              >
+                              <h3 class="no-content">
+                                Your withdrawals will show here.
+                              </h3>
+                            </div>
                           </td>
                         </tr>
                       </tbody>
@@ -213,191 +243,166 @@
         </div>
       </v-col>
     </v-row>
-  </v-container>
-
-  <!-- <div>
-    <h4>
-      Balance: {{ $auth.$state.user.balance.currency
-      }}{{ $auth.$state.user.balance.amount | format_money }}
-    </h4>
-    <hr />
-    <br />
-
-    <NuxtLink
-      :to="{
-        name: 'dashboard-funding-options',
-        params: { dashboard: $auth.$state.user.msisdn },
-      }"
-      >Send</NuxtLink
-    >
-    |
-    <NuxtLink
-      :to="{
-        name: 'dashboard-withdraw',
-        params: { dashboard: $auth.$state.user.msisdn },
-      }"
-      >Withdraw</NuxtLink
-    >
-    <hr />
-    <br />
-
-    <p>Transactions: <span @click="refreshTransactions">Refresh</span></p>
-
-    <v-simple-table height="300px">
-      <template v-slot:default>
-        <thead>
-          <tr>
-            <th class="text-left">Type</th>
-            <th class="text-left">Status</th>
-            <th class="text-left">Sender</th>
-            <th class="text-left">Receiver</th>
-            <th class="text-left">Amount</th>
-
-            <th class="text-left">Reference</th>
-            <th class="text-left">Date&nbsp;Created</th>
-            <th class="text-left">Action</th>
-          </tr>
-        </thead>
-        <tbody v-if="transactions.length">
-          <tr v-for="item in transactions" :key="item.ref">
-            <td>
-              {{
-                $auth.$state.user.msisdn == item.to_msisdn ? "credit" : "debit"
-              }}
-            </td>
-            <td>{{ item.status }}</td>
-            <td>
-              {{
-                $auth.$state.user.msisdn == item.from_msisdn
-                  ? "You"
-                  : item.from_msisdn
-              }}
-            </td>
-            <td>
-              {{
-                $auth.$state.user.msisdn == item.to_msisdn
-                  ? "You"
-                  : remove_wait(item.to_msisdn)
-              }}
-            </td>
-            <td>
-              {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-"
-              }}{{ item.amount | format_money }}
-            </td>
-
-            <td>
-              {{
-                $auth.$state.user.msisdn == item.from_msisdn
-                  ? item.from_ref
-                  : item.to_ref
-              }}
-            </td>
-            <td>{{ $moment(item.inserted_at).calendar() }}</td>
-            <td>
-              <v-btn
-                :loading="item.refuse_loading"
-                v-if="
-                  item.status === 'floating' &&
-                  $auth.$state.user.msisdn == item.to_msisdn
-                "
-                @click="handle(item.ref, 'refuse')"
-                outlined
-                x-small
-                color="error"
-                >Refuse</v-btn
-              >
-              <v-btn
-                v-if="
-                  item.status === 'floating' &&
-                  $auth.$state.user.msisdn == item.to_msisdn
-                "
-                :loading="item.accept_loading"
-                @click="handle(item.ref, 'accept')"
-                outlined
-                x-small
-                color="success"
-                >Accept</v-btn
-              >
-
-              <v-btn
-                :loading="item.reclaim_loading"
-                @click="confirmReclaim(item.ref)"
-                v-if="
-                  item.status === 'floating' &&
-                  $auth.$state.user.msisdn == item.from_msisdn
-                "
-                color="primary"
-                outlined
-                x-small
-                >Reclaim</v-btn
-              >
-            </td>
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <tr>
-            <td style="text-align: center" colspan="8">No Transactions</td>
-          </tr>
-        </tbody>
-      </template>
-    </v-simple-table>
-
-    <br />
-    <br />
-
-    <p>Withdrawals: <span @click="refreshWithdrawals">Refresh</span></p>
-
-    <v-simple-table height="300px">
-      <template v-slot:default>
-        <thead>
-          <tr>
-            <th class="text-left">Status</th>
-            <th class="text-left">Amount</th>
-            <th class="text-left">Bank&nbsp;Name</th>
-            <th class="text-left">Bank&nbsp;Account</th>
-            <th class="text-left">Reference</th>
-            <th class="text-left">Date&nbsp;Created</th>
-          </tr>
-        </thead>
-        <tbody v-if="withdrawals.length">
-          <tr v-for="item in withdrawals" :key="item.ref">
-            <td>
-              {{ item.status }}
-            </td>
-            <td>
-              {{ item.amount | format_money }}
-            </td>
-
-            <td>
-              {{ item.bank_name }}
-            </td>
-            <td>
-              {{ item.bank_account_number }}
-            </td>
-            <td>
-              {{ item.customer_ref }}
-            </td>
-            <td>{{ $moment(item.inserted_at).calendar() }}</td>
-          </tr>
-        </tbody>
-
-        <tbody v-else>
-          <tr>
-            <td style="text-align: center" colspan="6">No Withdrawals</td>
-          </tr>
-        </tbody>
-      </template>
-    </v-simple-table>
 
     <Confirm
-      :show="showConfirmReclaimUI"
-      instruction="Are you sure you want to reclaim you funds? This will come with a charge of 2%"
-      title="Reclaim Transaction"
-      :param="reclaimRef"
-      @yes="reclaim"
-      @no="showConfirmReclaimUI = false"
-    />
-  </div> -->
+      :show="showAcceptDialogue"
+      title="Accept"
+      :item_ref="processingTransaction.ref"
+      @yes="acceptMoney"
+      @no="showAcceptDialogue = false"
+    >
+      <p>
+        Click 'YES' below to accept
+        {{ processingTransaction.amount | format_money }} from
+        {{ processingTransaction.from_msisdn }}
+      </p>
+    </Confirm>
+
+    <Confirm
+      :show="showRejectDialogue"
+      title="Reject"
+      :item_ref="processingTransaction.ref"
+      @yes="rejectMoney"
+      @no="showRejectDialogue = false"
+    >
+      <p>
+        Click 'YES' below to reject
+        {{ processingTransaction.amount | format_money }} from
+        {{ processingTransaction.from_msisdn }}
+      </p>
+    </Confirm>
+
+    <Confirm
+      :show="showReclaimDialogue"
+      title="Reclaim"
+      :item_ref="processingTransaction.ref"
+      @yes="reclaimMoney"
+      @no="showReclaimDialogue = false"
+    >
+      <p>
+        Click 'YES' below to reclaim
+        {{ processingTransaction.amount | format_money }} you sent to
+        {{ processingTransaction.to_msisdn }}
+      </p>
+      <small
+        >Reclaiming will cost you N10. You will receive
+        {{ (processingTransaction.amount - 1000) | format_money }}</small
+      >
+    </Confirm>
+
+    <v-dialog
+      v-model="showTransactionDialogue"
+      max-width="600px"
+      content-class="transaction--dialogue"
+    >
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Transfer Transaction</span>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Date:</div>
+                  <div class="right">
+                    {{ displayedTransaction.inserted_at }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Type:</div>
+                  <div class="right">Self Funding</div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Amount:</div>
+                  <div class="right">
+                    {{ displayedTransaction.amount | format_money }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Status:</div>
+                  <div class="right">
+                    {{ displayedTransaction.status }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">From:</div>
+                  <div class="right">
+                    {{ displayedTransaction.from_msisdn }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">To:</div>
+                  <div class="right">
+                    {{ displayedTransaction.to_msisdn }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Narration:</div>
+                  <div class="right">
+                    {{ displayedTransaction.narration }}
+                  </div>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="item">
+                  <div class="left">Summary:</div>
+                  <div class="right">
+                    You transfered NGN 5,000 to 2348573483743
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="blue darken-1"
+            text
+            @click="showTransactionDialogue = false"
+          >
+            Download
+          </v-btn>
+          <v-btn color="blue darken-1" text @click="showSupportDialogue = true">
+            Support
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!--  Support Dialogue  -->
+    <v-dialog
+      v-model="showSupportDialogue"
+      overlay-opacity="0.8"
+      max-width="400px"
+    >
+      <v-card>
+        <v-card-title>
+          <span>Support</span>
+        </v-card-title>
+        <v-card-actions>
+          <v-btn color="primary" text @click="showSupportDialogue = false">
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <script>
@@ -411,8 +416,19 @@ export default {
     fixedTabs: false,
     leftTab: true,
     tab: null,
-    showConfirmReclaimUI: false,
-    reclaimRef: "",
+
+    /** Transaction actions */
+    processingTransaction: {},
+    showAcceptDialogue: false,
+    showRejectDialogue: false,
+    showReclaimDialogue: false,
+
+    /** Transaction display */
+    showTransactionDialogue: false,
+    displayedTransaction: {},
+
+    /** Support */
+    showSupportDialogue: false,
   }),
   computed: mapGetters(["transactions", "withdrawals", "breadcrumbs"]),
 
@@ -434,7 +450,7 @@ export default {
 
       transactions.data.transactions.forEach((i) => {
         i.accept_loading = false;
-        i.refuse_loading = false;
+        i.reject_loading = false;
         i.reclaim_loading = false;
       });
       this.$store.commit("pushTransactions", transactions.data.transactions);
@@ -445,14 +461,50 @@ export default {
       this.$store.commit("pushWithdrawals", withdrawals.data.withdrawals);
     },
 
-    confirmReclaim(ref) {
-      this.reclaimRef = ref;
-      this.showConfirmReclaimUI = true;
+    /**
+     * Transactions Actions start here
+     */
+    acceptDialogue(item) {
+      this.processingTransaction = item;
+      this.showAcceptDialogue = true;
+    },
+    rejectDialogue(item) {
+      this.processingTransaction = item;
+      this.showRejectDialogue = true;
+    },
+    reclaimDialogue(item) {
+      this.processingTransaction = item;
+      this.showReclaimDialogue = true;
     },
 
-    reclaim(ref) {
-      this.showConfirmReclaimUI = false;
-      this.handle(ref, "reclaim");
+    acceptMoney(item_ref) {
+      this.showAcceptDialogue = false;
+
+      this.handle(item_ref, "accept", () => {
+        this.$toast.success("N300 accepted");
+      });
+    },
+    rejectMoney(item_ref) {
+      this.showRejectDialogue = false;
+
+      this.handle(item_ref, "reject", () => {
+        this.$toast.success("N300 rejected successfully");
+      });
+    },
+    reclaimMoney() {
+      console.log("Reclaiming money");
+    },
+
+    /** Transactions Actions end here */
+
+    triggerTransactionDialogue(tranx) {
+      this.showTransactionDialogue = true;
+      this.displayedTransaction = tranx;
+      console.log(tranx);
+    },
+
+    showHelper(feature) {
+      console.log(feature);
     },
 
     /**
@@ -461,7 +513,7 @@ export default {
      * @param {String} ref The transaction reference
      * @param {String} type The action to handle
      */
-    async handle(ref, type) {
+    async handle(ref, type, callback) {
       this.transactionButtonLoader(true, ref, type);
       try {
         const response = await this.$axios.$post(`/transfer/${type}/${ref}`);
@@ -471,6 +523,7 @@ export default {
           "updateTransactionStatus",
           response.data.transaction
         );
+        callback();
       } catch (error) {
         this.transactionButtonLoader(false, ref, type);
         if (error.response.status == 400) {
@@ -548,6 +601,10 @@ export default {
     button {
       text-transform: capitalize;
     }
+
+    .table--action {
+      min-width: 228px;
+    }
   }
 
   .send-icon {
@@ -582,6 +639,18 @@ export default {
     .transact {
       width: 260px;
     }
+  }
+}
+
+.transaction--dialogue {
+  .item {
+    display: flex;
+  }
+  .left {
+    font-weight: 700;
+    margin-right: 14px;
+  }
+  .right {
   }
 }
 
