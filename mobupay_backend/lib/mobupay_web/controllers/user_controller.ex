@@ -11,26 +11,17 @@ defmodule MobupayWeb.UserController do
   require Logger
 
   def user(
-        %Plug.Conn{assigns: %{current_user: %Account.User{country: country} = user}} = conn,
+        %Plug.Conn{assigns: %{current_user: user}} = conn,
         _params
       ) do
-    {:ok, currency} = CountryData.get_currency(country)
-
-    balance = %{
-      amount: Transactions.get_balance(user),
-      currency: currency
-    }
-
     user =
       user
       |> Repo.preload([:bank_accounts])
       |> Repo.preload([:cards])
 
-    user_data = %Account.User{user | balance: balance}
-
     conn
     |> Response.ok(%{
-      user: user_data
+      user: user
     })
   end
 
@@ -46,7 +37,7 @@ defmodule MobupayWeb.UserController do
         conn
         |> Response.ecto_changeset_error(changeset)
 
-      true ->
+      _ ->
         conn
         |> Response.error(500, "Unable to save email at this time.")
     end

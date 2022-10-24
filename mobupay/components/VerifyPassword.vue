@@ -3,14 +3,14 @@
     <v-card>
       <v-card-title class="text-h6 primary">
         <div class="d-flex justify-space-between w-100">
-          <span>Enter your password </span>
+          <span class="title--text">Enter your password </span>
           <span @click="close" class="close">&times;</span>
         </div>
       </v-card-title>
 
       <v-card-text>
         <v-row class="mt-6 justify-center">
-          <v-col cols="8">
+          <v-col cols="6">
             <v-text-field
               v-model="form.password"
               onfocus
@@ -22,20 +22,19 @@
         </v-row>
       </v-card-text>
 
-      <v-divider></v-divider>
-
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          :loading="verifyingPassword"
-          class="ma-1"
-          depressed
-          small
-          @click="verifyPassword"
-        >
-          Verify Password
-        </v-btn>
+        <div class="mb-4">
+          <v-btn
+            color="#0052ff"
+            :loading="verifyingPassword"
+            class="ma-1"
+            tile
+            @click="verifyPassword"
+          >
+            Verify Password
+          </v-btn>
+        </div>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -49,7 +48,8 @@ export default {
     verifyingPassword: false,
     showPassword: false,
     form: {
-      password: "@Nelie&e12",
+      password: "",
+      // password: "@Nelie&e12",
     },
   }),
   props: {
@@ -86,9 +86,16 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .close {
   cursor: pointer;
+}
+.title--text {
+  color: $white;
+}
+
+.v-btn {
+  color: $white;
 }
 
 .w-100 {

@@ -1,0 +1,16 @@
+[
+    {
+        "country": "Nigeria",
+        "country_code": "NG",
+        "dialing_code": "234",
+        "currency": "NGN",
+        "merchant": "paystack"
+    },
+    {
+        "country": "Ghana",
+        "country_code": "GH",
+        "dialing_code": "233",
+        "currency": "GHS",
+        "merchant": "paystack"
+    }
+]

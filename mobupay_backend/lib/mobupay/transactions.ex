@@ -4,8 +4,9 @@ defmodule Mobupay.Transactions do
   """
   import Ecto.Query, warn: false
   alias Mobupay.Repo
-  alias Mobupay.Helpers.{Token, ErrorCode}
-  alias Mobupay.Transactions.{Transaction, Ledger}
+  alias Mobupay.AccountManager
+  alias Mobupay.Helpers.{Token, EC}
+  alias Mobupay.Transactions.{Transaction, AccountBalance, BookBalance}
   alias Mobupay.Account
 
   def validate_transaction(attrs) do
@@ -64,26 +65,49 @@ defmodule Mobupay.Transactions do
     end
   end
 
-  # ledger
+  # Balance
 
   @doc """
-  Checks of a ledger entry exists using msisdn and transaction_id columns
+  Checks if an account balance entry exists
   """
-  def ledger_entry_exists?(%Transaction{id: transaction_id, to_msisdn: msisdn}, :to_msisdn) do
-    do_ledger_entry_exists?(transaction_id, msisdn)
-  end
+  @spec account_balance_entry_exists?(%Transaction{}, atom()) :: boolean()
+  def account_balance_entry_exists?(
+        %Transaction{id: transaction_id, to_msisdn: msisdn},
+        :to_msisdn
+      ),
+      do: do_account_balance_entry_exists?(transaction_id, msisdn)
 
-  def ledger_entry_exists?(%Transaction{id: transaction_id, from_msisdn: msisdn}, :from_msisdn) do
-    do_ledger_entry_exists?(transaction_id, msisdn)
-  end
+  def account_balance_entry_exists?(
+        %Transaction{id: transaction_id, from_msisdn: msisdn},
+        :from_msisdn
+      ),
+      do: do_account_balance_entry_exists?(transaction_id, msisdn)
 
-  def verify_sufficient_funds(user, amount) do
-    balance = get_balance(user)
+  @doc """
+  Checks if a book balance entry exists
+  """
+  def book_balance_entry_exists?(%Transaction{id: transaction_id, to_msisdn: msisdn}, :to_msisdn),
+    do: do_book_balance_entry_exists?(transaction_id, msisdn)
+
+  def book_balance_entry_exists?(
+        %Transaction{id: transaction_id, from_msisdn: msisdn},
+        :from_msisdn
+      ),
+      do: do_book_balance_entry_exists?(transaction_id, msisdn)
+
+  @doc """
+    Verifies if a user has sufficient funds
+  """
+  # TODO: verify from account balance or book balance
+  @spec verify_sufficient_funds(%Account.User{}, integer(), atom()) ::
+          {:ok, balance :: integer()} | {:error, String.t()}
+  def verify_sufficient_funds(user, amount, :book_balance) do
+    balance = get_book_balance(user)
 
     if balance > amount do
       {:ok, balance}
     else
-      {:error, "E#{ErrorCode.get("insufficient_balance")} - Insufficient Balance"}
+      {:error, "E#{EC.get("insufficient_balance")} - Insufficient Balance"}
     end
   end
 
@@ -96,7 +120,69 @@ defmodule Mobupay.Transactions do
     amount
   end
 
-  def create_ledger_entry(
+  @spec verify_sufficient_funds(%Account.User{}, integer(), :account_balance) ::
+          {:ok, balance :: integer()} | {:error, String.t()}
+  def verify_sufficient_funds(user, amount, :account_balance) do
+    balance = get_account_balance(user)
+
+    if balance > amount do
+      {:ok, balance}
+    else
+      {:error, "E#{EC.get("insufficient_balance")} - Insufficient Balance"}
+    end
+  end
+
+  @doc """
+    Fetches a users account balance
+  """
+  @spec get_account_balance(%Account.User{}) :: integer()
+  def get_account_balance(%Account.User{msisdn: msisdn}) do
+    amount =
+      AccountBalance
+      |> where([l], l.msisdn == ^msisdn)
+      |> Repo.aggregate(:sum, :amount)
+
+    amount
+  end
+
+  @doc """
+    Fetches a users book balance
+  """
+  @spec get_book_balance(%Account.User{}) :: integer()
+  def get_book_balance(%Account.User{msisdn: msisdn}) do
+    amount =
+      BookBalance
+      |> where([l], l.msisdn == ^msisdn)
+      |> Repo.aggregate(:sum, :amount)
+
+    amount
+  end
+
+  @doc """
+    Creates a ledger entry for account balance
+  """
+  @spec create_account_balance_entry(%Transaction{}, atom(), :to_msisdn) ::
+          {:ok, %AccountBalance{}}
+  def(
+    create_account_balance_entry(
+      %Transaction{to_msisdn: to_msisdn, amount: amount} = transaction,
+      type,
+      :to_msisdn
+    )
+  ) do
+    changeset =
+      transaction
+      |> Ecto.build_assoc(:ledgers)
+      |> Ledger.changeset(%{
+        msisdn: to_msisdn,
+        amount: get_ledger_amount(type, amount)
+      })
+
+    Repo.insert(changeset)
+  end
+
+  @spec create_book_balance_entry(%Transaction{}, atom(), :to_msisdn) :: {:ok}
+  def create_book_balance_entry(
         %Transaction{to_msisdn: to_msisdn, amount: amount} = transaction,
         type,
         :to_msisdn
@@ -134,6 +220,13 @@ defmodule Mobupay.Transactions do
     |> Repo.one()
   end
 
+  def accept_money(user, transaction) do
+    Repo.transaction(AccountManager.accept_money(user, transaction))
+    |> IO.inspect(label: "Acept money")
+
+    :ok
+  end
+
   defp get_ledger_amount(type, amount) do
     case type do
       :plus ->
@@ -144,8 +237,22 @@ defmodule Mobupay.Transactions do
     end
   end
 
-  defp do_ledger_entry_exists?(transaction_id, msisdn) do
-    Ledger
+  # defp do_ledger_entry_exists?(transaction_id, msisdn) do
+  #   Ledger
+  #   |> where([l], l.transaction_id == ^transaction_id)
+  #   |> where([l], l.msisdn == ^msisdn)
+  #   |> Repo.exists?()
+  # end
+
+  defp do_account_balance_entry_exists?(transaction_id, msisdn) do
+    AccountBalance
+    |> where([l], l.transaction_id == ^transaction_id)
+    |> where([l], l.msisdn == ^msisdn)
+    |> Repo.exists?()
+  end
+
+  defp do_book_balance_entry_exists?(transaction_id, msisdn) do
+    BookBalance
     |> where([l], l.transaction_id == ^transaction_id)
     |> where([l], l.msisdn == ^msisdn)
     |> Repo.exists?()

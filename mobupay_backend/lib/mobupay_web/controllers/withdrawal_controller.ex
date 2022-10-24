@@ -1,7 +1,7 @@
 defmodule MobupayWeb.WithdrawalController do
   use MobupayWeb, :controller
 
-  alias Mobupay.Helpers.{Response, Token, ErrorCode, Utility, Pagination}
+  alias Mobupay.Helpers.{Response, Token, EC, Utility, Pagination}
   alias Mobupay.Services.{Redis, Paystack}
   alias Mobupay.Account
   alias Mobupay.Transactions
@@ -75,7 +75,7 @@ defmodule MobupayWeb.WithdrawalController do
         conn
         |> Response.error(
           400,
-          "E#{ErrorCode.get("bank_account_not_found")} - An Error occured while withdrawing funds"
+          "E#{EC.get("bank_account_not_found")} - An Error occured while withdrawing funds"
         )
 
       {:error, message} ->
@@ -88,7 +88,7 @@ defmodule MobupayWeb.WithdrawalController do
         conn
         |> Response.error(
           500,
-          "E#{ErrorCode.get("unhandled_withdrawal_initiation_error")} - An Error occured while withdrawing funds"
+          "E#{EC.get("unhandled_withdrawal_initiation_error")} - An Error occured while withdrawing funds"
         )
     end
   end
@@ -128,7 +128,7 @@ defmodule MobupayWeb.WithdrawalController do
         conn
         |> Response.error(
           400,
-          "E#{ErrorCode.get("invalid_withdrawal_otp")} - Invalid/Exipred OTP"
+          "E#{EC.get("invalid_withdrawal_otp")} - Invalid/Exipred OTP"
         )
 
       {:error, message} ->
@@ -141,7 +141,7 @@ defmodule MobupayWeb.WithdrawalController do
         conn
         |> Response.error(
           500,
-          "E#{ErrorCode.get("unhandled_withdrawal_completion_error")} - An error occured while completing withdrawal"
+          "E#{EC.get("unhandled_withdrawal_completion_error")} - An error occured while completing withdrawal"
         )
     end
   end
@@ -153,7 +153,7 @@ defmodule MobupayWeb.WithdrawalController do
 
       _ ->
         {:error,
-         "E#{ErrorCode.get("error_creating_transfer_recipient")} - An error occured while completing withdrawal"}
+         "E#{EC.get("error_creating_transfer_recipient")} - An error occured while completing withdrawal"}
     end
   end
 
@@ -166,7 +166,7 @@ defmodule MobupayWeb.WithdrawalController do
         Logger.error("Completing withdrawal failed with error: #{inspect(response)}")
 
         {:error,
-         "E#{ErrorCode.get("error_transfering_funds")} - An error occured while completing withdrawal"}
+         "E#{EC.get("error_transfering_funds")} - An error occured while completing withdrawal"}
     end
   end
 
@@ -177,7 +177,7 @@ defmodule MobupayWeb.WithdrawalController do
 
       initiation_ip !== completion_ip ->
         {:error,
-         "E#{ErrorCode.get("ip_address_mismatch")} - An error occured while completing withdrawal"}
+         "E#{EC.get("ip_address_mismatch")} - An error occured while completing withdrawal"}
     end
   end
 end

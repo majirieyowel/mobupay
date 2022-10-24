@@ -71,7 +71,7 @@ defmodule Mobupay.Services.Paystack do
     post_request(endpoint, payload, headers, options)
   end
 
-  #TODO: obsolete
+  # TODO: obsolete
   @spec initialize_transaction(map()) :: {:ok, map()} | {:error, any()}
   def initialize_transaction(%{amount: amount, email: email, callback: callback}) do
     base_url = System.get_env("PAYSTACK_BASE_URL")
@@ -140,16 +140,29 @@ defmodule Mobupay.Services.Paystack do
       {"Authorization", "Bearer #{secret_key}"}
     ]
 
+    metadata = %{
+      custom_fields: [
+        %{
+          type: "Mobupay",
+          signature: "f5d0fcabe37ae86a18d493b51b648f95",
+          time: DateTime.utc_now()
+        }
+      ]
+    }
+
     payload =
       %{
         email: email,
         amount: amount,
         authorization_code: authcode,
-        reference: reference
+        reference: reference,
+        metadata: metadata
       }
       |> Jason.encode!()
 
-    Logger.info("paystack::requesting charge_authorization Endpoint: #{endpoint}")
+    Logger.info(
+      "paystack::requesting charge_authorization Endpoint: #{endpoint} with payload: #{inspect(payload)}"
+    )
 
     options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 

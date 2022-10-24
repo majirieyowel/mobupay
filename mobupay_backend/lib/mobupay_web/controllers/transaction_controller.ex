@@ -1,9 +1,8 @@
 defmodule MobupayWeb.TransactionController do
   use MobupayWeb, :controller
 
-  alias Mobupay.Helpers.{Response, ErrorCode, Utility, Token, Pagination}
+  alias Mobupay.Helpers.{Response, EC, Utility, Token, Pagination, CountryData}
   alias Mobupay.Services.Paystack
-  alias Mobupay.CountryData
   alias Mobupay.Transactions
   alias Mobupay.Account
 
@@ -20,7 +19,7 @@ defmodule MobupayWeb.TransactionController do
     conn
     |> Response.error(
       400,
-      "E#{ErrorCode.get("add_email_to_proceed")} - Please add your email address"
+      "Please add your email address"
     )
   end
 
@@ -62,7 +61,7 @@ defmodule MobupayWeb.TransactionController do
            }),
          {:ok, %Transactions.Transaction{}} <-
            Transactions.update_transaction_status(transaction, :accepted),
-         {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
+         #  {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
          new_balance <- Transactions.get_balance(user),
          {:ok, currency} <- CountryData.get_currency(country) do
       conn
@@ -78,7 +77,7 @@ defmodule MobupayWeb.TransactionController do
         Logger.error("Paystack charge auth is failing with error: #{inspect(error_response)}")
 
         message =
-          "E#{ErrorCode.get("unable_to_charge_authorization")} - Unable to charge card, please use another card!. Gateway Response: #{gateway_response}"
+          "E#{EC.get("unable_to_charge_authorization")} - Unable to charge card, please use another card!. Gateway Response: #{gateway_response}"
 
         conn
         |> Response.error(500, message)
@@ -91,7 +90,7 @@ defmodule MobupayWeb.TransactionController do
         conn
         |> Response.error(
           500,
-          "E#{ErrorCode.get("unhandled_charge_authorization_error")} - Unable to process transaction at the moment, please try again later."
+          "E#{EC.get("unhandled_charge_authorization_error")} - Unable to process transaction at the moment, please try again later."
         )
     end
   end
@@ -160,14 +159,13 @@ defmodule MobupayWeb.TransactionController do
         } = conn,
         %{"ref" => ref, "consolidator" => consolidator} = params
       ) do
-    with %Transactions.Transaction{amount: transaction_amount} =
-           transaction <-
+    with %Transactions.Transaction{amount: transaction_amount} = transaction <-
            Transactions.get_by_ref(ref),
          {:ok, :verified, paystack_data} <-
            verify_on_paystack(ref),
          {:ok, %Transactions.Transaction{}} <-
            Transactions.update_transaction_status(transaction, :accepted),
-         {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
+         #  {:ok, %Transactions.Ledger{}} <- maybe_create_ledger_entry(transaction),
          {:ok, card} <- maybe_save_card(user, paystack_data),
          new_balance <- Transactions.get_balance(user),
          {:ok, currency} <- CountryData.get_currency(country) do
@@ -183,15 +181,14 @@ defmodule MobupayWeb.TransactionController do
         conn
         |> Response.error(
           404,
-          "E#{ErrorCode.get("transaction_not_found")} - Unable to verify transaction"
+          "E#{EC.get("transaction_not_found")} - Unable to verify transaction"
         )
-
 
       {:error, :not_verified} ->
         conn
         |> Response.error(
           400,
-          "E#{ErrorCode.get("transaction_not_successful_on_paystack")} - Unable to verify transaction"
+          "E#{EC.get("transaction_not_successful_on_paystack")} - Unable to verify transaction"
         )
 
       error ->
@@ -202,7 +199,7 @@ defmodule MobupayWeb.TransactionController do
         conn
         |> Response.error(
           500,
-          "E#{ErrorCode.get("unhandled_transaction_verification_error")} - Unable to verify transaction"
+          "E#{EC.get("unhandled_transaction_verification_error")} - Unable to verify transaction"
         )
     end
   end
@@ -226,7 +223,6 @@ defmodule MobupayWeb.TransactionController do
     conn
     |> Response.ok(Pagination.format("transactions", transactions))
   end
-
 
   defp verify_on_paystack(ref) do
     case Paystack.verify_transaction(ref) do

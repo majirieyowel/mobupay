@@ -14,8 +14,8 @@
     <br />
 
     <h2>
-      Balance: {{ $auth.$state.user.balance.currency
-      }}{{ $auth.$state.user.balance.amount | format_money }}
+      Balance: {{ $auth.$state.user.currency
+      }}{{ $auth.$state.user.account_balance | format_money }}
     </h2>
 
     <br />

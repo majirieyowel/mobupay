@@ -7,15 +7,29 @@ defmodule Mobupay.Account.User do
   @mail_regex ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/
 
   @derive {Jason.Encoder,
-           only: [:msisdn, :email, :country, :ref, :bank_accounts, :cards, :balance]}
-           
+           only: [
+             :msisdn,
+             :email,
+             :country,
+             :currency,
+             :ref,
+             :bank_accounts,
+             :account_balance,
+             :book_balance,
+             :cards,
+             :balance
+           ]}
+
   schema "users" do
     field :email, :string
     field :msisdn, :string
     field :country, :string
+    field :currency, :string
     field :ref, :string
     field :city, :string
     field :region, :string
+    field :account_balance, :integer, default: 0
+    field :book_balance, :integer, default: 0
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :balance, :string, virtual: true
@@ -39,7 +53,7 @@ defmodule Mobupay.Account.User do
 
   def full_onboarding_changeset(user, attrs) do
     user
-    |> cast(attrs, [:msisdn, :country, :city, :region, :ref, :password])
+    |> cast(attrs, [:msisdn, :country, :currency, :city, :region, :ref, :password])
     |> validate_required([:msisdn, :country, :ref, :password])
     |> validate_password
     |> encrypt_and_put_password()
@@ -55,7 +69,7 @@ defmodule Mobupay.Account.User do
 
   defp validate_email(changeset) do
     changeset
-    |> validate_required(:email, message: "Email number is required!")
+    |> validate_required(:email, message: "Email is required!")
     |> validate_format(:email, @mail_regex, message: "Invalid email format")
   end
 

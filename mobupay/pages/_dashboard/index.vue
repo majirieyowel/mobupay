@@ -5,13 +5,21 @@
         <div class="dash--header">
           <div class="balance">
             <span style="position: relative">
-              <span class="currency">{{
-                $auth.$state.user.balance.currency
-              }}</span>
-              <span class="amount">{{
-                $auth.$state.user.balance.amount | format_money
-              }}</span>
-              <v-icon class="help-icon">mdi-help-circle-outline</v-icon>
+              <!--
+                <span class="currency">{{ $auth.$state.user.currency }}</span>
+              -->
+              <span class="amount">
+                Account Balance:
+                {{ $auth.$state.user.account_balance | format_money }}</span
+              >
+              <br />
+              <span class="amount">
+                Book Balance:
+                {{ $auth.$state.user.account_balance | format_money }}</span
+              >
+              <!--
+                <v-icon class="help-icon">mdi-help-circle-outline</v-icon>
+              -->
             </span>
           </div>
           <div class="transact">
@@ -34,213 +42,142 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" class="pa-0">
-        <div class="dash--tabs">
-          <!-- fixed tabs on mobile and left above -->
-          <v-tabs
-            @change="handleTabChange"
-            active-class="dash--tab--active"
-            hide-slider
-            mobile-breakpoint="600"
-            v-model="tab"
-            :fixed-tabs="fixedTabs"
-            :left="leftTab"
-          >
-            <v-tab>Transactions</v-tab>
-            <v-tab>Withdrawals</v-tab>
-          </v-tabs>
+      <v-col cols="12" class="pa-0 transaction">
+        <v-card elevation="2">
+          <v-card-title
+            >Transactions
+            <span @click="refreshTransactions" class="refresh-transaction">
+              <v-icon color="blue">mdi-refresh</v-icon>
+            </span>
+          </v-card-title>
+          <v-simple-table fixed-header>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">Type</th>
+                  <th class="text-left">Status</th>
+                  <th class="text-left">Sender</th>
+                  <th class="text-left">Receiver</th>
+                  <th class="text-left">Amount</th>
 
-          <v-tabs-items v-model="tab">
-            <v-tab-item>
-              <v-simple-table fixed-header>
-                <template v-slot:default>
-                  <thead>
-                    <tr>
-                      <th class="text-left">Type</th>
-                      <th class="text-left">Status</th>
-                      <th class="text-left">Sender</th>
-                      <th class="text-left">Receiver</th>
-                      <th class="text-left">Amount</th>
+                  <th class="text-left">Reference</th>
+                  <th class="text-left">Date&nbsp;Created</th>
+                  <th class="text-left table--action">Action</th>
+                </tr>
+              </thead>
+              <tbody v-if="transactions.length">
+                <tr v-for="item in transactions" :key="item.ref">
+                  <td>
+                    {{
+                      $auth.$state.user.msisdn == item.to_msisdn
+                        ? "credit"
+                        : "debit"
+                    }}
+                  </td>
+                  <td>
+                    {{ item.status }}
+                    <v-icon
+                      @click="showHelper(item.status)"
+                      small
+                      class="help-icon"
+                      >mdi-help-circle-outline</v-icon
+                    >
+                  </td>
+                  <td>
+                    {{
+                      $auth.$state.user.msisdn == item.from_msisdn
+                        ? "You"
+                        : item.from_msisdn
+                    }}
+                  </td>
+                  <td>
+                    {{
+                      $auth.$state.user.msisdn == item.to_msisdn
+                        ? "You"
+                        : remove_wait(item.to_msisdn)
+                    }}
+                  </td>
+                  <td>
+                    {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-"
+                    }}{{ item.amount | format_money }}
+                  </td>
 
-                      <th class="text-left">Reference</th>
-                      <th class="text-left">Date&nbsp;Created</th>
-                      <th class="text-left table--action">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody v-if="transactions.length">
-                    <tr v-for="item in transactions" :key="item.ref">
-                      <td>
-                        {{
-                          $auth.$state.user.msisdn == item.to_msisdn
-                            ? "credit"
-                            : "debit"
-                        }}
-                      </td>
-                      <td>
-                        {{ item.status }}
-                        <v-icon
-                          @click="showHelper(item.status)"
-                          small
-                          class="help-icon"
-                          >mdi-help-circle-outline</v-icon
-                        >
-                      </td>
-                      <td>
-                        {{
-                          $auth.$state.user.msisdn == item.from_msisdn
-                            ? "You"
-                            : item.from_msisdn
-                        }}
-                      </td>
-                      <td>
-                        {{
-                          $auth.$state.user.msisdn == item.to_msisdn
-                            ? "You"
-                            : remove_wait(item.to_msisdn)
-                        }}
-                      </td>
-                      <td>
-                        {{
-                          $auth.$state.user.msisdn == item.to_msisdn
-                            ? "+"
-                            : "-"
-                        }}{{ item.amount | format_money }}
-                      </td>
+                  <td>
+                    {{
+                      $auth.$state.user.msisdn == item.from_msisdn
+                        ? item.from_ref
+                        : item.to_ref
+                    }}
+                  </td>
+                  <td>{{ $moment(item.inserted_at).calendar() }}</td>
+                  <td>
+                    <v-btn
+                      :loading="item.reject_loading"
+                      v-if="
+                        item.status === 'floating' &&
+                        $auth.$state.user.msisdn == item.to_msisdn
+                      "
+                      @click="rejectDialogue(item)"
+                      outlined
+                      x-small
+                      color="error"
+                      >Reject</v-btn
+                    >
+                    &nbsp;
+                    <v-btn
+                      @click="triggerTransactionDialogue(item)"
+                      color="primary"
+                      outlined
+                      x-small
+                      >View</v-btn
+                    >
+                    &nbsp;
+                    <v-btn
+                      v-if="
+                        item.status === 'floating' &&
+                        $auth.$state.user.msisdn == item.to_msisdn
+                      "
+                      :loading="item.accept_loading"
+                      @click="acceptDialogue(item)"
+                      outlined
+                      x-small
+                      color="success"
+                      >Accept</v-btn
+                    >
+                    &nbsp;
 
-                      <td>
-                        {{
-                          $auth.$state.user.msisdn == item.from_msisdn
-                            ? item.from_ref
-                            : item.to_ref
-                        }}
-                      </td>
-                      <td>{{ $moment(item.inserted_at).calendar() }}</td>
-                      <td>
-                        <v-btn
-                          :loading="item.reject_loading"
-                          v-if="
-                            item.status === 'floating' &&
-                            $auth.$state.user.msisdn == item.to_msisdn
-                          "
-                          @click="rejectDialogue(item)"
-                          outlined
-                          x-small
-                          color="error"
-                          >Reject</v-btn
-                        >
-                        &nbsp;
-                        <v-btn
-                          @click="triggerTransactionDialogue(item)"
-                          color="primary"
-                          outlined
-                          x-small
-                          >View</v-btn
-                        >
-                        &nbsp;
-                        <v-btn
-                          v-if="
-                            item.status === 'floating' &&
-                            $auth.$state.user.msisdn == item.to_msisdn
-                          "
-                          :loading="item.accept_loading"
-                          @click="acceptDialogue(item)"
-                          outlined
-                          x-small
-                          color="success"
-                          >Accept</v-btn
-                        >
-                        &nbsp;
-
-                        <v-btn
-                          :loading="item.reclaim_loading"
-                          @click="reclaimDialogue(item)"
-                          v-if="
-                            item.status === 'floating' &&
-                            $auth.$state.user.msisdn == item.from_msisdn
-                          "
-                          color="warning"
-                          outlined
-                          x-small
-                          >Reclaim</v-btn
-                        >
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tbody v-else>
-                    <tr>
-                      <td style="text-align: center" colspan="8">
-                        <div class="mt-5">
-                          <v-icon x-large color="rgb(209 208 208)"
-                            >mdi-archive-outline</v-icon
-                          >
-                          <h3 class="no-content">
-                            Your transactions will show here.
-                          </h3>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </template>
-              </v-simple-table>
-            </v-tab-item>
-            <v-tab-item>
-              <v-card flat>
-                <v-card-text>
-                  <v-simple-table fixed-header>
-                    <template v-slot:default>
-                      <thead>
-                        <tr>
-                          <th class="text-left">Status</th>
-                          <th class="text-left">Amount</th>
-                          <th class="text-left">Bank&nbsp;Name</th>
-                          <th class="text-left">Bank&nbsp;Account</th>
-                          <th class="text-left">Reference</th>
-                          <th class="text-left">Date&nbsp;Created</th>
-                        </tr>
-                      </thead>
-                      <tbody v-if="withdrawals.length">
-                        <tr v-for="item in withdrawals" :key="item.ref">
-                          <td>
-                            {{ item.status }}
-                          </td>
-                          <td>
-                            {{ item.amount | format_money }}
-                          </td>
-
-                          <td>
-                            {{ item.bank_name }}
-                          </td>
-                          <td>
-                            {{ item.bank_account_number }}
-                          </td>
-                          <td>
-                            {{ item.customer_ref }}
-                          </td>
-                          <td>{{ $moment(item.inserted_at).calendar() }}</td>
-                        </tr>
-                      </tbody>
-
-                      <tbody v-else>
-                        <tr>
-                          <td style="text-align: center" colspan="6">
-                            <div class="mt-5">
-                              <v-icon x-large color="rgb(209 208 208)"
-                                >mdi-archive-alert-outline</v-icon
-                              >
-                              <h3 class="no-content">
-                                Your withdrawals will show here.
-                              </h3>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </template>
-                  </v-simple-table>
-                </v-card-text>
-              </v-card>
-            </v-tab-item>
-          </v-tabs-items>
-        </div>
+                    <v-btn
+                      :loading="item.reclaim_loading"
+                      @click="reclaimDialogue(item)"
+                      v-if="
+                        item.status === 'floating' &&
+                        $auth.$state.user.msisdn == item.from_msisdn
+                      "
+                      color="warning"
+                      outlined
+                      x-small
+                      >Reclaim</v-btn
+                    >
+                  </td>
+                </tr>
+              </tbody>
+              <tbody v-else>
+                <tr>
+                  <td style="text-align: center" colspan="8">
+                    <div class="mt-5">
+                      <v-icon x-large color="rgb(209 208 208)"
+                        >mdi-archive-outline</v-icon
+                      >
+                      <h3 class="no-content">
+                        Your transactions will show here.
+                      </h3>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -297,7 +234,14 @@
     >
       <v-card>
         <v-card-title>
-          <span class="text-h5">Transfer Transaction</span>
+          <span class="text-h5"
+            >Transaction -
+            {{
+              $auth.$state.user.msisdn == displayedTransaction.from_msisdn
+                ? displayedTransaction.from_ref
+                : displayedTransaction.to_ref
+            }}
+          </span>
         </v-card-title>
         <v-divider></v-divider>
         <v-card-text>
@@ -491,8 +435,14 @@ export default {
         this.$toast.success("N300 rejected successfully");
       });
     },
-    reclaimMoney() {
-      console.log("Reclaiming money");
+    reclaimMoney(item_ref) {
+      this.showReclaimDialogue = false;
+
+      this.handle(item_ref, "reclaim", () => {
+        this.$toast.success(
+          `${this.processingTransaction.amount} has been reclaimed`
+        );
+      });
     },
 
     /** Transactions Actions end here */
@@ -500,7 +450,6 @@ export default {
     triggerTransactionDialogue(tranx) {
       this.showTransactionDialogue = true;
       this.displayedTransaction = tranx;
-      console.log(tranx);
     },
 
     showHelper(feature) {
@@ -512,6 +461,7 @@ export default {
      *
      * @param {String} ref The transaction reference
      * @param {String} type The action to handle
+     * @param {Function} callback A callback function that handles the success event
      */
     async handle(ref, type, callback) {
       this.transactionButtonLoader(true, ref, type);
@@ -612,6 +562,14 @@ export default {
     position: relative;
     top: -3px;
     transform: rotate(-29deg);
+  }
+}
+
+.transaction {
+  .refresh-transaction {
+    display: inline-block;
+    margin-left: 10px;
+    cursor: pointer;
   }
 }
 

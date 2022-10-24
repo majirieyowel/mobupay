@@ -6,9 +6,12 @@ defmodule Mobupay.Repo.Migrations.CreateUsers do
       add :email, :string
       add :msisdn, :string, null: false
       add :country, :string, null: false
+      add :currency, :string, null: false
       add :ref, :string, null: false
       add :city, :string
       add :region, :string
+      add :account_balance, :integer, null: false
+      add :book_balance, :integer, null: false
       add :hashed_password, :string
       timestamps()
     end

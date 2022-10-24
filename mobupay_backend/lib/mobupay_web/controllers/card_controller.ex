@@ -2,7 +2,7 @@ defmodule MobupayWeb.CardController do
   use MobupayWeb, :controller
 
   alias Mobupay.Account
-  alias Mobupay.Helpers.{Response, ErrorCode}
+  alias Mobupay.Helpers.{Response, EC}
   require Logger
 
   def delete(%Plug.Conn{assigns: %{current_user: user}} = conn, %{"id" => card_ref}) do
@@ -26,7 +26,7 @@ defmodule MobupayWeb.CardController do
         conn
         |> Response.error(
           500,
-          "E#{ErrorCode.get("unhandled_card_removal_error")} - Unable delete card"
+          "E#{EC.get("unhandled_card_removal_error")} - Unable delete card"
         )
     end
   end

@@ -244,6 +244,23 @@
           </template>
         </v-breadcrumbs>
       </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <div class="balance" v-if="showHeaderBalance">
+        <div class="account">
+          <span>Account Balance:</span>
+          <span>
+            {{ $auth.$state.user.currency }}
+            {{ $auth.$state.user.account_balance | format_money }}
+          </span>
+        </div>
+        <div class="book">
+          <span>Book Balance:</span>
+          <span>
+            {{ $auth.$state.user.currency }}
+            {{ $auth.$state.user.book_balance | format_money }}
+          </span>
+        </div>
+      </div>
     </v-app-bar>
 
     <v-main>
@@ -303,6 +320,7 @@ export default {
     return {
       drawer: true,
       list: true,
+      showHeaderBalance: true,
     };
   },
   methods: {
@@ -327,6 +345,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.balance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  .account span {
+    font-weight: bold;
+  }
+  .book span {
+    font-size: 0.864rem;
+  }
+}
 .app--bar {
   // background: linear-gradient(191deg, #33acf4 28.93%, #0052ff 76.95%);
   box-shadow: none !important;

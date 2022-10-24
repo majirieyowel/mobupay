@@ -1,0 +1,176 @@
+<div class="dash--tabs">
+  <!-- fixed tabs on mobile and left above -->
+  <v-tabs
+    @change="handleTabChange"
+    active-class="dash--tab--active"
+    hide-slider
+    mobile-breakpoint="600"
+    v-model="tab"
+    :fixed-tabs="fixedTabs"
+    :left="leftTab"
+  >
+    <v-tab>Transactions</v-tab>
+    <v-tab>Withdrawals</v-tab>
+  </v-tabs>
+
+  <v-tabs-items v-model="tab">
+    <v-tab-item>
+      <v-simple-table fixed-header>
+        <template v-slot:default>
+          <thead>
+            <tr>
+              <th class="text-left">Type</th>
+              <th class="text-left">Status</th>
+              <th class="text-left">Sender</th>
+              <th class="text-left">Receiver</th>
+              <th class="text-left">Amount</th>
+
+              <th class="text-left">Reference</th>
+              <th class="text-left">Date&nbsp;Created</th>
+              <th class="text-left table--action">Action</th>
+            </tr>
+          </thead>
+          <tbody v-if="transactions.length">
+            <tr v-for="item in transactions" :key="item.ref">
+              <td>
+                {{ $auth.$state.user.msisdn == item.to_msisdn ? "credit" :
+                "debit" }}
+              </td>
+              <td>
+                {{ item.status }}
+                <v-icon @click="showHelper(item.status)" small class="help-icon"
+                  >mdi-help-circle-outline</v-icon
+                >
+              </td>
+              <td>
+                {{ $auth.$state.user.msisdn == item.from_msisdn ? "You" :
+                item.from_msisdn }}
+              </td>
+              <td>
+                {{ $auth.$state.user.msisdn == item.to_msisdn ? "You" :
+                remove_wait(item.to_msisdn) }}
+              </td>
+              <td>
+                {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-" }}{{
+                item.amount | format_money }}
+              </td>
+
+              <td>
+                {{ $auth.$state.user.msisdn == item.from_msisdn ? item.from_ref
+                : item.to_ref }}
+              </td>
+              <td>{{ $moment(item.inserted_at).calendar() }}</td>
+              <td>
+                <v-btn
+                  :loading="item.reject_loading"
+                  v-if="
+                            item.status === 'floating' &&
+                            $auth.$state.user.msisdn == item.to_msisdn
+                          "
+                  @click="rejectDialogue(item)"
+                  outlined
+                  x-small
+                  color="error"
+                  >Reject</v-btn
+                >
+                &nbsp;
+                <v-btn
+                  @click="triggerTransactionDialogue(item)"
+                  color="primary"
+                  outlined
+                  x-small
+                  >View</v-btn
+                >
+                &nbsp;
+                <v-btn
+                  v-if="
+                            item.status === 'floating' &&
+                            $auth.$state.user.msisdn == item.to_msisdn
+                          "
+                  :loading="item.accept_loading"
+                  @click="acceptDialogue(item)"
+                  outlined
+                  x-small
+                  color="success"
+                  >Accept</v-btn
+                >
+                &nbsp;
+
+                <v-btn
+                  :loading="item.reclaim_loading"
+                  @click="reclaimDialogue(item)"
+                  v-if="
+                            item.status === 'floating' &&
+                            $auth.$state.user.msisdn == item.from_msisdn
+                          "
+                  color="warning"
+                  outlined
+                  x-small
+                  >Reclaim</v-btn
+                >
+              </td>
+            </tr>
+          </tbody>
+          <tbody v-else>
+            <tr>
+              <td style="text-align: center" colspan="8">
+                <div class="mt-5">
+                  <v-icon x-large color="rgb(209 208 208)"
+                    >mdi-archive-outline</v-icon
+                  >
+                  <h3 class="no-content">Your transactions will show here.</h3>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </template>
+      </v-simple-table>
+    </v-tab-item>
+    <v-tab-item>
+      <v-card flat>
+        <v-card-text>
+          <v-simple-table fixed-header>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">Status</th>
+                  <th class="text-left">Amount</th>
+                  <th class="text-left">Bank&nbsp;Name</th>
+                  <th class="text-left">Bank&nbsp;Account</th>
+                  <th class="text-left">Reference</th>
+                  <th class="text-left">Date&nbsp;Created</th>
+                </tr>
+              </thead>
+              <tbody v-if="withdrawals.length">
+                <tr v-for="item in withdrawals" :key="item.ref">
+                  <td>{{ item.status }}</td>
+                  <td>{{ item.amount | format_money }}</td>
+
+                  <td>{{ item.bank_name }}</td>
+                  <td>{{ item.bank_account_number }}</td>
+                  <td>{{ item.customer_ref }}</td>
+                  <td>{{ $moment(item.inserted_at).calendar() }}</td>
+                </tr>
+              </tbody>
+
+              <tbody v-else>
+                <tr>
+                  <td style="text-align: center" colspan="6">
+                    <div class="mt-5">
+                      <v-icon x-large color="rgb(209 208 208)"
+                        >mdi-archive-alert-outline</v-icon
+                      >
+                      <h3 class="no-content">
+                        Your withdrawals will show here.
+                      </h3>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card-text>
+      </v-card>
+    </v-tab-item>
+  </v-tabs-items>
+</div>

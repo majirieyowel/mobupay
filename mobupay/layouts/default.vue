@@ -44,6 +44,20 @@
                   >Login</NuxtLink
                 >
               </div>
+              <!--
+              
+                <div v-if="$auth.loggedIn">
+                  <v-btn
+                    color="#0052ff"
+                    tile
+                    block
+                    elevation="0"
+                    @click="$auth.logout()"
+                  >
+                    Logout
+                  </v-btn>
+                </div>
+              -->
             </v-col>
           </v-col>
         </v-col>

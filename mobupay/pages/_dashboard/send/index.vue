@@ -3,20 +3,22 @@
     <v-row>
       <v-col cols="12" class="pa-0 send">
         <div v-if="showTransferUI">
-          <div class="col-12 col-sm-8 col-md-6 mt-sm-5 send-container">
+          <div class="col-12 col-sm-8 col-md-6 send-container">
             <div class="relative" v-if="step == 'fund'">
-              <h3 class="balance" v-if="showBalance">
-                Balance: {{ $auth.$state.user.balance.currency
-                }}{{ $auth.$state.user.balance.amount | format_money }}
-              </h3>
-
+              <v-alert color="primary" text type="info">
+                <p class="ma-0 pa-0 text-caption">
+                  Send money to any valid phone number even if it's not
+                  registered with Mobupay.
+                  <br />
+                  You can also retrieve your money back before it's claimed.
+                </p>
+              </v-alert>
               <v-row align="center">
                 <v-col class="" cols="12">
                   <v-tabs
                     @change="form.to_msisdn = ''"
                     active-class="send--tab--active"
                     v-model="tab"
-                    hide-slider
                     :centered="tabCentered"
                     :left="tabLeft"
                     background-color="#eee"
@@ -29,7 +31,7 @@
                     <v-tab-item>
                       <v-text-field
                         v-model="form.to_msisdn"
-                        label="Phone Number"
+                        label=""
                         hint="International format e.g 2348108125270"
                         persistent-hint
                         type="number"
@@ -43,7 +45,7 @@
                         :items="contacts"
                         item-text="name"
                         item-value="msisdn"
-                        label="Phone number"
+                        label=""
                         :loading="isLoadingContacts"
                         clearable
                       ></v-autocomplete
@@ -98,8 +100,8 @@
                   <v-select
                     v-model="form.funding_channel"
                     :items="funding_channels"
-                    item-text="label"
-                    item-value="ref"
+                    item-text="key"
+                    item-value="value"
                     label="Payment Channel"
                   >
                   </v-select>
@@ -171,34 +173,89 @@
               </Success>
             </div>
 
-            <div v-if="step == 'email'">
-              <p>ADD YOUR EMAIL</p>
-
-              <p>
-                Before creating your first transaction please add your email
-                address
-              </p>
-              <p>This is for transactions notifications only</p>
-
-              <v-row align="center">
-                <v-col class="d-flex" cols="12" sm="6">
-                  <v-text-field
-                    v-model="email_form.email"
-                    label="Email Address"
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
-
-              <v-row align="center">
-                <v-col class="d-flex" cols="12" sm="6">
-                  <v-btn @click="add_email" elevation="2" outlined raised small
-                    >Proceed</v-btn
-                  >
-                </v-col>
-              </v-row>
-            </div>
+            <!--
+            
+              <div v-if="step == 'email'">
+                <p>ADD YOUR EMAIL</p>
+  
+                <p>
+                  Before creating your first transaction please add your email
+                  address
+                </p>
+                <p>This is for transactions notifications only</p>
+  
+                <v-row align="center">
+                  <v-col class="d-flex" cols="12" sm="6">
+                    <v-text-field
+                      v-model="email_form.email"
+                      label="Email Address"
+                    >
+                    </v-text-field>
+                  </v-col>
+                </v-row>
+  
+                <v-row align="center">
+                  <v-col class="d-flex" cols="12" sm="6">
+                    <v-btn @click="add_email" elevation="2" outlined raised small
+                      >Proceed</v-btn
+                    >
+                  </v-col>
+                </v-row>
+              </div>
+            -->
           </div>
+
+          <!--Verify Email Modal-->
+
+          <template>
+            <div class="text-center">
+              <v-dialog v-model="showEmailModal" width="500">
+                <v-card>
+                  <v-card-title class="text-h6 lighten-2">
+                    ADD YOUR EMAIL
+                  </v-card-title>
+
+                  <v-card-text class="mt-7 mb-0 pb-0">
+                    <p>
+                      Before creating your first transaction, please add your
+                      email address.
+                      <br />
+                      This will be used for notifications only.
+                    </p>
+                  </v-card-text>
+
+                  <v-container>
+                    <v-row align="center">
+                      <v-col class="d-flex mx-auto email-padding" cols="12">
+                        <v-text-field
+                          autofocus
+                          placeholder="john.doe@gmail.com"
+                          v-model="email_form.email"
+                          label="Email Address"
+                        >
+                        </v-text-field>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+
+                  <v-card-actions class="pb-5">
+                    <v-spacer></v-spacer>
+                    <v-btn
+                      :loading="submittingEmail"
+                      class="button"
+                      color="#0052ff"
+                      tile
+                      @click="add_email"
+                    >
+                      Save Email
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-dialog>
+            </div>
+          </template>
+
+          <!--Verify Email Modal ends-->
 
           <VerifyPassword
             :show="showVerifyPasswordUI"
@@ -250,27 +307,29 @@ export default {
   head: {
     script: [{ src: "https://js.paystack.co/v2/inline.js" }],
   },
-  meta: {
-    breadcrumbs: [
-      {
-        text: "Send",
-        disabled: true,
-        help: true,
-        to: "#",
-      },
-    ],
-  },
+  // meta: {
+  //   breadcrumbs: [
+  //     {
+  //       text: "Send Money",
+  //       disabled: true,
+  //       help: true,
+  //       to: "#",
+  //     },
+  //   ],
+  // },
   computed: mapGetters(["cards"]),
   data: () => ({
     submitting: false,
     successModal: false,
     showTransferUI: true,
+    showEmailModal: false,
+    submittingEmail: false,
     showVerifyPasswordUI: false,
     verifyingTransaction: true,
     showEmailUI: false,
     step: "fund",
     showCards: false,
-    showBalance: false,
+
     showPaymentChannels: false,
     transactionAmount: "",
     toMsisdn: "",
@@ -299,7 +358,7 @@ export default {
       switch (newValue) {
         case "Default":
           this.showCards = false;
-          this.showBalance = false;
+
           break;
         case "Existing Card":
           if (this.cards.length == 0) {
@@ -307,11 +366,9 @@ export default {
             this.$toast.error("You don't have any existing cards");
           } else {
             this.showCards = true;
-            this.showBalance = false;
           }
           break;
         case "Balance":
-          this.showBalance = true;
           this.showCards = false;
           break;
         default:
@@ -338,7 +395,7 @@ export default {
       // check for email added
 
       if (!this.$auth.$state.user.email) {
-        this.step = "email";
+        this.showEmailModal = true;
         return;
       }
 
@@ -366,6 +423,7 @@ export default {
       }
     },
     async add_email() {
+      this.submittingEmail = true;
       try {
         await this.$axios.$post("user/add-email", this.email_form);
 
@@ -373,11 +431,15 @@ export default {
 
         this.$toast.success("Email added succcessfully!");
 
+        this.showEmailModal = false;
+
         this.step = "fund";
 
         this.initiatePayment();
       } catch (error) {
-        errorCatch(error);
+        errorCatch(error, this);
+      } finally {
+        this.submittingEmail = false;
       }
     },
     async handleDefaultPayment({ email, paystack_pk, channels, amount, ref }) {
@@ -437,12 +499,28 @@ export default {
     },
     setupPaymentChannels() {
       const minimumBalance = 10000; //kobo
-      const allowed_payment_channels = ["Default"];
-      if (this.$auth.$state.user.balance.amount >= minimumBalance) {
-        allowed_payment_channels.push("Balance");
+      const allowed_payment_channels = [
+        {
+          key: "Default",
+          value: "Default",
+        },
+      ];
+      if (this.$auth.$state.user.account_balance >= minimumBalance) {
+        let key = `Balance (${
+          this.$auth.$state.user.currency
+        } ${this.$options.filters.format_money(
+          this.$auth.$state.user.account_balance
+        )})`;
+        allowed_payment_channels.push({
+          key,
+          value: "Balance",
+        });
       }
       if (this.cards.length > 0) {
-        allowed_payment_channels.push("Existing Card");
+        allowed_payment_channels.push({
+          key: "Existing Card",
+          value: "Existing Card",
+        });
       }
       if (allowed_payment_channels.length !== 1) {
         this.showPaymentChannels = true;
@@ -467,10 +545,6 @@ export default {
       console.log(query);
     },
   },
-  mounted() {
-    this.setupCards();
-    this.setupPaymentChannels();
-  },
   async fetch() {
     try {
       const contacts = await this.$axios.$get("/contact");
@@ -489,23 +563,34 @@ export default {
     }
   },
   components: { VerifyPassword, Confirm },
+  mounted() {
+    this.setupCards();
+    this.setupPaymentChannels();
+    console.log(this.$options.filters.format_money("4000"));
+  },
 };
 </script>
 
 <style lang="scss" scoped>
+.v-application .text-caption {
+  font-size: 0.85rem !important;
+}
+.email-padding {
+  padding: 0px 24px;
+}
+.v-text-field {
+  // padding-top: 12px;
+  // margin-top: 4px; s
+}
+.v-tab {
+  font-size: 0.725rem;
+}
 .v-tabs-items {
   background: #eee;
 }
 .send {
   .send-container {
-    margin-top: 10%;
-  }
-
-  .balance {
-    position: absolute;
-    top: -24px;
-    text-align: center;
-    width: 100%;
+    margin-top: 0%;
   }
 }
 

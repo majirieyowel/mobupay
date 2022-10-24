@@ -2,9 +2,8 @@ defmodule MobupayWeb.OnboardController do
   use MobupayWeb, :controller
 
   alias Mobupay.Account
-  alias Mobupay.CountryData
   alias Mobupay.Services.{Redis, Twilio}
-  alias Mobupay.Helpers.{Response, Token, Encryption, Msisdn}
+  alias Mobupay.Helpers.{Response, Token, Encryption, Msisdn, CountryData}
 
   require Logger
 
@@ -15,12 +14,7 @@ defmodule MobupayWeb.OnboardController do
 
   @onboard_key_identifier "_onboarding_otp_"
 
-  def getting_started(conn, _params) do
-    conn
-    |> Response.ok(%{
-      "supported_countries" => CountryData.get_by(:country_code)
-    })
-  end
+  def getting_started(conn, _params), do: conn |> Response.ok(CountryData.get_list())
 
   def check_msisdn(conn, %{"msisdn" => msisdn, "country" => country} = params) do
     Logger.info("Received request to check MSISDN: #{msisdn}, Country: #{country}")
@@ -55,12 +49,14 @@ defmodule MobupayWeb.OnboardController do
     encoded_random_token = Encryption.hash(random_token)
 
     with {:ok, formatted_msisdn} <- Msisdn.format(country, request_msisdn),
+         {:ok, currency} <- CountryData.get_currency(country),
          updated_user_params <- Map.put(user_params, "msisdn", formatted_msisdn),
          %Ecto.Changeset{valid?: true, changes: %{msisdn: msisdn} = changes} <-
            Account.partial_onboard(updated_user_params),
          {:ok, _data} <- Twilio.lookup(msisdn),
          updated_changes <- Map.put(changes, "onboard_step", "verify_otp"),
          updated_changes <- Map.put(updated_changes, "_hash", encoded_random_token),
+         updated_changes <- Map.put(updated_changes, "currency", currency),
          {:ok, "OK"} <- Redis.set(msisdn, updated_changes),
          {:ok, _otp} <- generate_and_send_onboarding_otp(msisdn) do
       conn
@@ -165,6 +161,7 @@ defmodule MobupayWeb.OnboardController do
     end
   end
 
+  # TODO: verify this is useful
   def set_auth_method(conn, _) do
     conn
     |> Response.error(400, "Missing/Invalid input")

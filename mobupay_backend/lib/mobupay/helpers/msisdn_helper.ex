@@ -1,7 +1,7 @@
 defmodule Mobupay.Helpers.Msisdn do
   @moduledoc false
 
-  alias Mobupay.CountryData
+  alias Mobupay.Helpers.CountryData
 
   require Logger
 
