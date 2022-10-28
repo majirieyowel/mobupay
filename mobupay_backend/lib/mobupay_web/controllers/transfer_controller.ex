@@ -2,6 +2,7 @@ defmodule MobupayWeb.TransferController do
   use MobupayWeb, :controller
 
   alias Mobupay.Helpers.{Response, Utility, Token, EC, CountryData}
+  alias Mobupay.Transfer
   alias Mobupay.Transactions
   alias Mobupay.Account
   alias Mobupay.MsisdnRepos
@@ -248,17 +249,19 @@ defmodule MobupayWeb.TransferController do
         } = conn,
         %{"ref" => ref} = params
       ) do
-    with %Transactions.Transaction{
-           amount: transaction_amount
-         } = transaction <-
-           Transactions.get_by_ref(ref),
+    with {:ok,
+          %Transactions.Transaction{
+            amount: transaction_amount,
+            to_msisdn: to_msisdn
+          } = transaction} <- get_paystack_transaction_by_ref(ref),
          {:ok, %{"currency" => currency} = paystack_data} <- verify_on_paystack(ref),
-         {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_status(transaction, :floating),
-         {:ok, %Transactions.Transaction{to_msisdn: to_msisdn} = transaction} <-
-           Transactions.normalize_to_msisdn(transaction),
-         {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_visibilty(transaction, true),
+         {:ok, _} <-
+           Transactions.update_transaction(transaction, %{
+             status: :floating,
+             is_visible: true,
+             to_msisdn: normalize_to_msisdn(to_msisdn),
+             payment_channel: :card
+           }),
          {:ok, card} <- maybe_save_card(user, paystack_data) do
       Task.Supervisor.async_nolink(Mobupay.TaskSupervisor, fn ->
         notify_receiver(transaction, currency)
@@ -272,13 +275,6 @@ defmodule MobupayWeb.TransferController do
         card: card
       })
     else
-      %Transactions.Transaction{} ->
-        conn
-        |> Response.error(
-          404,
-          "E#{EC.get("transaction_not_found")} - Unable to verify transaction"
-        )
-
       {:error, message} ->
         conn
         |> Response.error(400, message)
@@ -296,14 +292,29 @@ defmodule MobupayWeb.TransferController do
     end
   end
 
-  def notify_receiver(
-        %Transactions.Transaction{
-          to_msisdn: to_msisdn,
-          from_msisdn: from_msisdn,
-          amount: amount
-        },
-        currency
-      ) do
+  # Attempt to fetch the transaction using the reference supplied by paystack -
+  # The transaction should be in an initiated state
+  defp get_paystack_transaction_by_ref(ref) do
+    case Transactions.get_by_ref(ref) do
+      nil ->
+        {:error, "E#{EC.get("transaction_not_found")} - Unable to verify transaction"}
+
+      %Transactions.Transaction{status: :initiated} = transaction ->
+        {:ok, transaction}
+
+      %Transactions.Transaction{} ->
+        {:error, "E#{EC.get("transaction_not_initiated")} - Unable to verify transaction"}
+    end
+  end
+
+  defp notify_receiver(
+         %Transactions.Transaction{
+           to_msisdn: to_msisdn,
+           from_msisdn: from_msisdn,
+           amount: amount
+         },
+         currency
+       ) do
     formatted_amount = Number.Currency.number_to_currency(amount / 100, unit: currency)
 
     frontend_url = String.trim_trailing(System.get_env("MOBUPAY_FRONTEND_URL"), "/")
@@ -317,7 +328,9 @@ defmodule MobupayWeb.TransferController do
           "You received #{formatted_amount} from #{from_msisdn}. Register on #{frontend_url} to accept."
       end
 
-    Twilio.send(to_msisdn, message)
+    IO.inspect(message)
+    # TODO uncomment
+    # Twilio.send(to_msisdn, message)
   end
 
   @doc """
@@ -333,11 +346,25 @@ defmodule MobupayWeb.TransferController do
 
     with %Transactions.Transaction{status: :floating} = transaction <-
            get_transaction_by_reference(ref),
-         {:ok, :msisdn_match} <- to_msisdn_match(user, transaction),
-         {:ok, _} <- Transaction.accept_money(user, transaction) do
+         {:ok, :match} <- to_msisdn_match(user, transaction),
+         {:ok,
+          %{
+            balance: %Account.User{
+              account_balance: new_account_balance,
+              book_balance: new_book_balance
+            },
+            status: %Transactions.Transaction{status: new_status, amount: amount}
+          }} <-
+           Transfer.accept_money(user, transaction) do
       conn
       |> Response.ok(%{
-        transaction: transaction
+        balance: %{
+          account_balance: new_account_balance,
+          book_balance: new_book_balance
+        },
+        status: new_status,
+        ref: ref,
+        amount: amount
       })
     else
       %Transactions.Transaction{} ->
@@ -374,15 +401,28 @@ defmodule MobupayWeb.TransferController do
       ) do
     Logger.info("Received request to reject payment with params #{inspect(params)}")
 
-    #  {:ok, %Transactions.Ledger{}} <-
-    #    maybe_create_ledger_entry(transaction, :plus, :from_msisdn)
     with %Transactions.Transaction{status: :floating} = transaction <-
-           Transactions.get_by_ref(ref),
-         {:ok, :msisdn_match} <- to_msisdn_match(user, transaction),
-         {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_status(transaction, :rejected) do
+           get_transaction_by_reference(ref),
+         {:ok, :match} <- to_msisdn_match(user, transaction),
+         {:ok,
+          %{
+            balance: %Account.User{
+              account_balance: new_account_balance,
+              book_balance: new_book_balance
+            },
+            status: %Transactions.Transaction{status: new_status, amount: amount}
+          }} <-
+           Transfer.reject_money(user, transaction) do
       conn
-      |> Response.ok()
+      |> Response.ok(%{
+        balance: %{
+          account_balance: new_account_balance,
+          book_balance: new_book_balance
+        },
+        status: new_status,
+        ref: ref,
+        amount: amount
+      })
     else
       nil ->
         conn
@@ -430,7 +470,7 @@ defmodule MobupayWeb.TransferController do
 
     with %Transactions.Transaction{status: :floating} = transaction <-
            Transactions.get_by_ref(ref),
-         {:ok, :msisdn_match} <- from_msisdn_match(user, transaction),
+         {:ok, :match} <- from_msisdn_match(user, transaction),
          {:ok, %Transactions.Transaction{} = transaction} <-
            Transactions.update_transaction_status(transaction, :reclaimed),
          #  {:ok, %Transactions.Ledger{}} <-
@@ -474,12 +514,25 @@ defmodule MobupayWeb.TransferController do
     end
   end
 
+  # Remove the prefixed wait in the Msisdn
+  defp normalize_to_msisdn(msisdn) do
+    cond do
+      String.starts_with?(msisdn, "wait_") ->
+        [_, stripped_msisdn] = String.split(msisdn, "_")
+
+        stripped_msisdn
+
+      true ->
+        msisdn
+    end
+  end
+
   defp to_msisdn_match(%Account.User{msisdn: msisdn}, %Transactions.Transaction{
          to_msisdn: to_msisdn
        }) do
     cond do
       msisdn === to_msisdn ->
-        {:ok, :msisdn_match}
+        {:ok, :match}
 
       msisdn !== to_msisdn ->
         {:error, "E#{EC.get("permission_denied_to_payment")} - Unable to process payment"}
@@ -491,7 +544,7 @@ defmodule MobupayWeb.TransferController do
        }) do
     cond do
       msisdn === from_msisdn ->
-        {:ok, :msisdn_match}
+        {:ok, :match}
 
       msisdn !== from_msisdn ->
         {:error, "E#{EC.get("permission_denied_to_payment")} - Unable to process payment"}
@@ -557,8 +610,8 @@ defmodule MobupayWeb.TransferController do
   end
 
   defp ensure_same_country_code(%Account.User{country: country}, to_msisdn) do
-    %{"dialing_code" => current_user_dialing_code, "name" => country_name} =
-      Map.get(CountryData.get_by(:country), String.downcase(country))
+    {:ok, current_user_dialing_code} =
+      CountryData.get_country_key(String.downcase(country), "dialing_code")
 
     case String.starts_with?(to_msisdn, current_user_dialing_code) do
       true ->
@@ -566,7 +619,7 @@ defmodule MobupayWeb.TransferController do
 
       false ->
         {:error,
-         "You can only send money to mobile numbers in #{country_name} (+#{current_user_dialing_code})"}
+         "You can only send money to mobile numbers in #{country} (+#{current_user_dialing_code})"}
     end
   end
 

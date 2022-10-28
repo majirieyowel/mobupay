@@ -18,19 +18,18 @@ defmodule Mobupay.Helpers.Msisdn do
 
   @spec format(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
   def format(country, msisdn) do
-    with msisdn <- String.trim(msisdn),
-         %{"dialing_code" => dialing_code} <-
-           Map.get(CountryData.get_by(:country), String.downcase(country)) do
-      cond do
-        String.starts_with?(msisdn, dialing_code) ->
-          {:ok, msisdn}
+    case CountryData.get_country_key(country, "dialing_code") do
+      {:ok, dialing_code} ->
+        cond do
+          String.starts_with?(String.trim(msisdn), dialing_code) ->
+            {:ok, msisdn}
 
-        true ->
-          {:ok, String.replace_prefix(msisdn, "0", dialing_code)}
-      end
-    else
-      _error ->
-        {:error, "Unable to resolve country #{country}"}
+          true ->
+            {:ok, String.replace_prefix(msisdn, "0", dialing_code)}
+        end
+
+      {:error, message} ->
+        {:error, message}
     end
   end
 end

@@ -72,4 +72,21 @@ defmodule Mobupay.Helpers.CountryData do
       }
     end)
   end
+
+  @spec get_country_key(String.t(), String.t()) :: {:ok, map} | {:error, String.t()}
+  def get_country_key(input_country, key) do
+    country_scan =
+      get_list()
+      |> Enum.filter(fn %{"country" => country} ->
+        String.downcase(country) === String.downcase(input_country)
+      end)
+
+    case country_scan do
+      [] ->
+        {:error, "Country #{input_country} is currently not supported"}
+
+      [found_country] ->
+        {:ok, Map.get(found_country, key)}
+    end
+  end
 end

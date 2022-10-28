@@ -59,6 +59,7 @@
                         'Elixir.Mobupay.Transactions.BookBalance',
                         'Elixir.Mobupay.Transactions.Ledger',
                         'Elixir.Mobupay.Transactions.Transaction',
+                        'Elixir.Mobupay.Transfer',
                         'Elixir.Mobupay.WithdrawalStatusEnum',
                         'Elixir.MobupayWeb',
                         'Elixir.MobupayWeb.BankAccountController',

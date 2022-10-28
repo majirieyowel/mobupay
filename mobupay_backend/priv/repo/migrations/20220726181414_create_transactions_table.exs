@@ -11,6 +11,7 @@ defmodule Mobupay.Repo.Migrations.CreateTransactionsTable do
       add(:to_ref, :string, null: false)
       add(:amount, :integer, null: false)
       add(:status, :transaction_status, null: false)
+      add(:payment_channel, :payment_channel, null: true)
       add(:from_msisdn, :string, null: false)
       add(:to_msisdn, :string, null: false)
       add(:narration, :string)

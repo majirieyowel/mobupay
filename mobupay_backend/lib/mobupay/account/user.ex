@@ -67,6 +67,12 @@ defmodule Mobupay.Account.User do
     |> update_change(:email, &String.downcase(&1))
   end
 
+  def update_balance_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:account_balance, :book_balance])
+    |> validate_required([:account_balance, :book_balance])
+  end
+
   defp validate_email(changeset) do
     changeset
     |> validate_required(:email, message: "Email is required!")

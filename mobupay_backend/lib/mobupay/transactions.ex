@@ -4,20 +4,21 @@ defmodule Mobupay.Transactions do
   """
   import Ecto.Query, warn: false
   alias Mobupay.Repo
-  alias Mobupay.AccountManager
   alias Mobupay.Helpers.{Token, EC}
   alias Mobupay.Transactions.{Transaction, AccountBalance, BookBalance}
   alias Mobupay.Account
 
   def validate_transaction(attrs) do
-    Transaction.changeset(%Transaction{}, attrs)
+    %Transaction{}
+    |> Transaction.changeset(attrs)
   end
 
+  # TODO: Investigate this function properly
   def list_user_transactions(%Account.User{msisdn: msisdn}, params \\ %{}) do
     Transaction
-    |> where([t], t.is_visible == true)
     |> where([t], t.from_msisdn == ^msisdn)
     |> or_where([t], t.to_msisdn == ^msisdn)
+    |> where([t], t.is_visible == true)
     |> order_by([t], desc: t.id)
     |> Repo.paginate(params)
   end
@@ -31,12 +32,19 @@ defmodule Mobupay.Transactions do
     |> Repo.insert()
   end
 
+  def update_transaction(transaction, attrs) do
+    transaction
+    |> Transaction.update_transaction_changeset(attrs)
+    |> Repo.update()
+  end
+
   def get_by_ref(ref) do
     Transaction
     |> where([t], t.ref == ^ref)
     |> Repo.one()
   end
 
+  # TODO: Obsolete as we use changeset now
   @spec update_transaction_status(
           {map, map}
           | %{
@@ -49,20 +57,9 @@ defmodule Mobupay.Transactions do
     Repo.update(Ecto.Changeset.change(transaction, status: status))
   end
 
+  # TODO obsolete
   def update_transaction_visibilty(transaction, visibility) do
     Repo.update(Ecto.Changeset.change(transaction, is_visible: visibility))
-  end
-
-  def normalize_to_msisdn(%Transaction{to_msisdn: msisdn} = transaction) do
-    case String.starts_with?(msisdn, "wait_") do
-      true ->
-        [_, msisdn] = String.split(msisdn, "_")
-
-        Repo.update(Ecto.Changeset.change(transaction, to_msisdn: msisdn))
-
-      false ->
-        {:ok, transaction}
-    end
   end
 
   # Balance
@@ -111,15 +108,6 @@ defmodule Mobupay.Transactions do
     end
   end
 
-  def get_balance(%Account.User{msisdn: msisdn}) do
-    amount =
-      Ledger
-      |> where([l], l.msisdn == ^msisdn)
-      |> Repo.aggregate(:sum, :amount)
-
-    amount
-  end
-
   @spec verify_sufficient_funds(%Account.User{}, integer(), :account_balance) ::
           {:ok, balance :: integer()} | {:error, String.t()}
   def verify_sufficient_funds(user, amount, :account_balance) do
@@ -132,6 +120,17 @@ defmodule Mobupay.Transactions do
     end
   end
 
+  # TODO obsolete as balances are obtained from user column
+  def get_balance(%Account.User{msisdn: msisdn}) do
+    amount =
+      Ledger
+      |> where([l], l.msisdn == ^msisdn)
+      |> Repo.aggregate(:sum, :amount)
+
+    amount
+  end
+
+  # TODO obsolete
   @doc """
     Fetches a users account balance
   """
@@ -218,13 +217,6 @@ defmodule Mobupay.Transactions do
     Ledger
     |> where([l], l.transaction_id == ^transaction_id)
     |> Repo.one()
-  end
-
-  def accept_money(user, transaction) do
-    Repo.transaction(AccountManager.accept_money(user, transaction))
-    |> IO.inspect(label: "Acept money")
-
-    :ok
   end
 
   defp get_ledger_amount(type, amount) do

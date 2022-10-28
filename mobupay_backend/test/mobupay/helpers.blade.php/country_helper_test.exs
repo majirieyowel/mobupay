@@ -31,4 +31,11 @@ defmodule Mobupay.Helpers.CountryDataTest do
              }
            } = head
   end
+
+  test "get_country_key/2 works as expected" do
+    assert {:ok, "234"} = CountryData.get_country_key("Nigeria", "dialing_code")
+
+    assert {:error, "Country Nigeriaaa is currently not supported"} =
+             CountryData.get_country_key("Nigeriaaa", "dialing_code")
+  end
 end

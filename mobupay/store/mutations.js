@@ -22,8 +22,9 @@ export default {
       return card.ref !== ref;
     });
   },
-  updateBalance(state, newbalance) {
-    state.auth.user.balance.amount = newbalance;
+  updateBalance(state, { account_balance, book_balance }) {
+    state.auth.user.account_balance = account_balance;
+    state.auth.user.book_balance = book_balance;
   },
   mayBeAddCard(state, payload) {
     if (Object.keys(payload).length !== 0) {
@@ -38,10 +39,10 @@ export default {
   pushWithdrawals(state, withdrawals_list) {
     state.withdrawals = withdrawals_list;
   },
-  updateTransactionStatus(state, transaction) {
+  updateTransactionStatus(state, { ref, status }) {
     state.transactions.map((item, index) => {
-      if (item.ref === transaction.ref) {
-        state.transactions[index].status = transaction.status;
+      if (item.ref === ref) {
+        state.transactions[index].status = status;
       }
     });
   },

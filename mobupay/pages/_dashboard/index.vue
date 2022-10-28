@@ -15,7 +15,7 @@
               <br />
               <span class="amount">
                 Book Balance:
-                {{ $auth.$state.user.account_balance | format_money }}</span
+                {{ $auth.$state.user.book_balance | format_money }}</span
               >
               <!--
                 <v-icon class="help-icon">mdi-help-circle-outline</v-icon>
@@ -352,6 +352,7 @@
 <script>
 import { mapGetters } from "vuex";
 
+import errorCatch from "../../functions/catchError";
 export default {
   middleware: ["auth", "verify_url_msisdn"],
   layout: "dashboard",
@@ -424,8 +425,12 @@ export default {
     acceptMoney(item_ref) {
       this.showAcceptDialogue = false;
 
-      this.handle(item_ref, "accept", () => {
-        this.$toast.success("N300 accepted");
+      this.handle(item_ref, "accept", ({ amount }) => {
+        this.$toast.success(
+          `${
+            this.$auth.$state.user.currency
+          }${this.$options.filters.format_money(amount)} accepted successfully`
+        );
       });
     },
     rejectMoney(item_ref) {
@@ -468,19 +473,14 @@ export default {
       try {
         const response = await this.$axios.$post(`/transfer/${type}/${ref}`);
         this.transactionButtonLoader(false, ref, type);
-        this.$store.commit("updateBalance", response.data.new_balance);
-        this.$store.commit(
-          "updateTransactionStatus",
-          response.data.transaction
-        );
-        callback();
+        this.$store.commit("updateBalance", response.data.balance);
+        this.$store.commit("updateTransactionStatus", {
+          status: response.data.status,
+          ref: response.data.ref,
+        });
+        callback(response.data);
       } catch (error) {
-        this.transactionButtonLoader(false, ref, type);
-        if (error.response.status == 400) {
-          this.$toast.error(error.response.data.message);
-        } else if (error.response.status == 500) {
-          console.log(error);
-        }
+        errorCatch(error, this);
       }
     },
 
