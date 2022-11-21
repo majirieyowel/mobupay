@@ -1,7 +1,21 @@
 defmodule Mobupay.Services.Twilio do
   @moduledoc false
 
+  import Mobupay.Services.ServicesHelper, only: [post_request: 5, get_request: 4]
+
   require Logger
+
+  @request_options [{:timeout, 32_000}, {:recv_timeout, 20_000}]
+
+  @twilio_sid System.get_env("TWILIO_SID")
+
+  @twilio_base_url System.get_env("TWILIO_BASE_URL")
+
+  @twilio_lookup_url System.get_env("TWILIO_LOOKUP_URL")
+
+  @twilio_auth_token System.get_env("TWILIO_AUTH_TOKEN")
+
+  @twilio_number System.get_env("TWILIO_PHONE_NUMBER")
 
   @doc """
   Lookup an MSISDN on Twilio
@@ -9,25 +23,11 @@ defmodule Mobupay.Services.Twilio do
   """
   @spec lookup(String.t()) :: {:ok, any()} | {:error, any()}
   def lookup(msisdn) do
-    twilio_lookup_url = System.get_env("TWILIO_LOOKUP_URL")
-    twilio_sid = System.get_env("TWILIO_SID")
-    twilio_auth_token = System.get_env("TWILIO_AUTH_TOKEN")
+    endpoint = "#{@twilio_lookup_url}v1/PhoneNumbers/#{msisdn}"
 
-    authorization_token = "#{twilio_sid}:#{twilio_auth_token}" |> :base64.encode()
-
-    endpoint = "#{twilio_lookup_url}v1/PhoneNumbers/#{msisdn}"
-
-    headers = [
-      Authorization: "Basic #{authorization_token}",
-      "Content-Type": "application/x-www-form-urlencoded"
-    ]
-    options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
-
-    lookup_response = get_request(endpoint, headers, options)
-
-    case lookup_response do
-      {:ok, %{"phone_number" => _msisdn}} ->
-        lookup_response
+    case get_request(__MODULE__, endpoint, headers(), request_options()) do
+      {:ok, %{"phone_number" => _msisdn}} = resp ->
+        resp
 
       _ ->
         {:error, "Mobile number '#{msisdn}' is invalid"}
@@ -48,51 +48,29 @@ defmodule Mobupay.Services.Twilio do
   """
   @spec send(String.t(), String.t()) :: {:ok, any()} | {:error, any()}
   def send(msisdn, message) do
-    twilio_base_url = System.get_env("TWILIO_BASE_URL")
-    twilio_number = System.get_env("TWILIO_PHONE_NUMBER")
-    twilio_sid = System.get_env("TWILIO_SID")
-    twilio_auth_token = System.get_env("TWILIO_AUTH_TOKEN")
+    endpoint = "#{@twilio_base_url}2010-04-01/Accounts/#{@twilio_sid}/Messages.json"
 
-    authorization_token = "#{twilio_sid}:#{twilio_auth_token}" |> :base64.encode()
-
-    endpoint = "#{twilio_base_url}2010-04-01/Accounts/#{twilio_sid}/Messages.json"
-
-    headers = [
-      Authorization: "Basic #{authorization_token}",
-      "Content-Type": "application/x-www-form-urlencoded"
-    ]
-
-    payload = ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}}
     # payload =
     #   ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}&StatusCallback=https://webhook.site/19151fc9-fd8f-4907-a4db-df81c42729f1}
 
+    payload = ~s{Body=#{message}&From=#{@twilio_number}&To=#{msisdn}}
+
     Logger.info("Twilio: Sending message with payload: #{payload}")
 
-    options = [{:timeout, 32_000}, {:recv_timeout, 20_000}]
-
-    post_request(endpoint, payload, headers, options)
+    post_request(__MODULE__, endpoint, payload, headers(), request_options())
   end
 
-  defp post_request(endpoint, payload, headers, options) do
-    with {:ok, %HTTPoison.Response{status_code: _status_code, body: body}} <-
-           HTTPoison.post(endpoint, payload, headers, options),
-         {:ok, json} <- Jason.decode(body) do
-      Logger.info("#{inspect(__MODULE__)} response: #{inspect(body)} ")
+  defp request_options(), do: @request_options
 
-      {:ok, json}
-    else
-      error ->
-        Logger.error("#{inspect(error)}")
-        {:error, error}
-    end
+  # -----  Enable these when you have a custom header ----
+
+  # defp request_options(options_list) when is_list(options_list), do: options_list
+  # defp request_options(_), do: @request_options
+
+  defp headers(header_list \\ []) do
+    [Authorization: "Basic #{auth_token()}", "Content-Type": "application/x-www-form-urlencoded"] ++
+      header_list
   end
 
-  defp get_request(endpoint, headers, options) do
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get(endpoint, headers, options),
-         {:ok, json} <- Jason.decode(body) do
-      Logger.info("#{inspect(__MODULE__)} GET response: #{inspect(body)} ")
-      {:ok, json}
-    end
-  end
+  defp auth_token(), do: "#{@twilio_sid}:#{@twilio_auth_token}" |> :base64.encode()
 end

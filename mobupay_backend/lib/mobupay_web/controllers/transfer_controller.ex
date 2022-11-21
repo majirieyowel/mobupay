@@ -46,30 +46,38 @@ defmodule MobupayWeb.TransferController do
 
     with %Ecto.Changeset{valid?: true} <- Transactions.validate_transaction(params),
          amount <- Utility.remove_decimal(amount),
-         ref <- Token.generate(:random),
          {:ok, _} <- ensure_no_self_funding(from_msisdn, to_msisdn),
          {:ok, _} <- ensure_same_country_code(user, to_msisdn),
          {:ok, :verified} <- lookup_msisdn(to_msisdn),
-         {:ok, %Transactions.Transaction{}} <-
+         {:ok, %Transactions.Transaction{} = transaction} <-
            Transactions.create_transaction(%{
-             ref: ref,
+             ref: Token.generate(:random),
              status: :initiated,
              from_msisdn: from_msisdn,
-             to_msisdn: "wait_" <> to_msisdn,
+             to_msisdn: to_msisdn,
              amount: amount,
              narration: narration,
              ip_address: ip_address,
              is_visible: false,
-             device: device
+             device: device,
+             payment_channel: "card"
            }) do
       conn
       |> Response.ok(%{
-        paystack_pk: System.get_env("PAYSTACK_PUBLIC_KEY"),
-        amount: amount,
-        ref: ref,
-        channels: ["card"],
-        email: email,
-        funding_channel: "Default"
+        transaction: transaction,
+        payment_status: "INCOMPLETE",
+        payment_url: "",
+        merchant: %{
+          title: "paystack",
+          key: System.get_env("PAYSTACK_PUBLIC_KEY")
+        },
+        customer: %{
+          email: user.email,
+          msisdn: user.msisdn
+        },
+        metadata: %{
+          receiver_registered: Account.msisdn_exists?(to_msisdn)
+        }
       })
     else
       %Ecto.Changeset{} = changeset ->
@@ -124,7 +132,7 @@ defmodule MobupayWeb.TransferController do
              ref: Token.generate(:random),
              status: :initiated,
              from_msisdn: from_msisdn,
-             to_msisdn: "wait_" <> to_msisdn,
+             to_msisdn: to_msisdn,
              amount: Utility.remove_decimal(amount),
              narration: narration,
              ip_address: ip_address,
@@ -138,13 +146,10 @@ defmodule MobupayWeb.TransferController do
              reference: reference
            }),
          {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_status(transaction, :floating),
-         {:ok, %Transactions.Transaction{to_msisdn: to_msisdn}} <-
-           Transactions.normalize_to_msisdn(transaction) do
+           Transactions.update_transaction_status(transaction, :floating) do
       conn
       |> Response.ok(%{
         transaction_amount: transaction_amount,
-        transaction_currency: currency,
         to_msisdn: to_msisdn,
         card: %{},
         funding_channel: "Existing Card"
@@ -168,57 +173,61 @@ defmodule MobupayWeb.TransferController do
   end
 
   # Handles payment from balance
-  # TODO: check for previous floating sent in balance too
   def index(
         %Plug.Conn{
           assigns: %{
-            current_user: %Account.User{country: country, msisdn: from_msisdn} = user
+            current_user: %Account.User{msisdn: from_msisdn} = user
           }
         } = conn,
         %{
           "amount" => amount,
           "to_msisdn" => to_msisdn,
-          "narration" => narration,
-          "ip_address" => ip_address,
-          "device" => device,
           "funding_channel" => "Balance"
         } = params
       ) do
-    Logger.info("Received request to transfer with params #{inspect(params)}")
+    Logger.info("Received request to transfer from balance with params #{inspect(params)}")
 
-    with %Ecto.Changeset{valid?: true} <- Transactions.validate_transaction(params),
+    with %Ecto.Changeset{valid?: true} <-
+           Transactions.validate_transaction(params),
          amount <- Utility.remove_decimal(amount),
          {:ok, _} <- ensure_no_self_funding(from_msisdn, to_msisdn),
-         {:ok, _} <- Transactions.verify_sufficient_funds(user, amount, :book_balance),
+         {:ok, _} <- Transactions.verify_sufficient_funds(user, amount, :account_balance),
          {:ok, :verified} <- lookup_msisdn(to_msisdn),
-         {:ok, %Transactions.Transaction{amount: transaction_amount} = transaction} <-
-           Transactions.create_transaction(%{
-             ref: Token.generate(:random),
-             status: :floating,
-             from_msisdn: from_msisdn,
-             to_msisdn: to_msisdn,
-             amount: amount,
-             narration: narration,
-             ip_address: ip_address,
-             device: device
-           }),
-         {:ok, %Transactions.Transaction{}} <-
-           Transactions.update_transaction_status(transaction, :floating),
-         #  {:ok, %Transactions.Ledger{}} <-
-         #    maybe_create_account_balance_entry(transaction, :minus, :from_msisdn),
-         new_balance <- Transactions.get_balance(user),
-         {:ok, currency} <- CountryData.get_currency(country) do
+         {:ok,
+          %{
+            user: %Account.User{
+              account_balance: new_account_balance,
+              book_balance: new_book_balance
+            },
+            transaction: transaction
+          }} <-
+           Transfer.from_balance(
+             user,
+             Map.merge(params, %{"amount" => amount, "from_msisdn" => from_msisdn})
+           ) do
       conn
       |> Response.ok(%{
-        transaction_amount: transaction_amount,
-        new_balance: new_balance,
-        transaction_currency: currency,
-        to_msisdn: to_msisdn,
-        card: %{},
-        funding_channel: "Existing Card"
+        transaction: transaction,
+        payment_status: "COMPLETE",
+        payment_url: nil,
+        merchant: %{
+          title: nil,
+          key: nil
+        },
+        customer: %{
+          email: user.email,
+          msisdn: user.msisdn
+        },
+        balance: %{
+          account_balance: new_account_balance,
+          book_balance: new_book_balance
+        },
+        metadata: %{
+          receiver_registered: Account.msisdn_exists?(to_msisdn)
+        }
       })
     else
-      %Ecto.Changeset{} = changeset ->
+      %Ecto.Changeset{valid?: false} = changeset ->
         conn
         |> Response.error(
           422,
@@ -232,7 +241,7 @@ defmodule MobupayWeb.TransferController do
 
       error ->
         Logger.error(
-          "Error initiating paystack transaction (old card) with payload: #{inspect(params)} and error: #{inspect(error)}"
+          "Error transfering from balance. Params: #{inspect(params)}. Error: #{inspect(error)}"
         )
 
         conn
@@ -251,17 +260,14 @@ defmodule MobupayWeb.TransferController do
       ) do
     with {:ok,
           %Transactions.Transaction{
-            amount: transaction_amount,
             to_msisdn: to_msisdn
           } = transaction} <- get_paystack_transaction_by_ref(ref),
          {:ok, %{"currency" => currency} = paystack_data} <- verify_on_paystack(ref),
-         {:ok, _} <-
-           Transactions.update_transaction(transaction, %{
-             status: :floating,
-             is_visible: true,
-             to_msisdn: normalize_to_msisdn(to_msisdn),
-             payment_channel: :card
-           }),
+         {:ok,
+          %{
+            transaction: transaction
+          }} <-
+           Transfer.from_card(transaction),
          {:ok, card} <- maybe_save_card(user, paystack_data) do
       Task.Supervisor.async_nolink(Mobupay.TaskSupervisor, fn ->
         notify_receiver(transaction, currency)
@@ -269,10 +275,12 @@ defmodule MobupayWeb.TransferController do
 
       conn
       |> Response.ok(%{
-        to_msisdn: to_msisdn,
-        transaction_currency: currency,
-        transaction_amount: transaction_amount,
-        card: card
+        transaction: transaction,
+        card: card,
+        payment_status: "COMPLETE",
+        metadata: %{
+          receiver_registered: Account.msisdn_exists?(to_msisdn)
+        }
       })
     else
       {:error, message} ->
@@ -475,7 +483,7 @@ defmodule MobupayWeb.TransferController do
            Transactions.update_transaction_status(transaction, :reclaimed),
          #  {:ok, %Transactions.Ledger{}} <-
          #    maybe_create_ledger_entry(transaction, :plus, :from_msisdn),
-         new_balance <- Transactions.get_balance(user) do
+         new_balance <- Transactions.get_account_balance(user) do
       conn
       |> Response.ok(%{
         new_balance: new_balance,
@@ -511,19 +519,6 @@ defmodule MobupayWeb.TransferController do
           # TODO: Add this to errors
           "E#{EC.get("unhandled_payment_reject_error")} - Unable to accept payment"
         )
-    end
-  end
-
-  # Remove the prefixed wait in the Msisdn
-  defp normalize_to_msisdn(msisdn) do
-    cond do
-      String.starts_with?(msisdn, "wait_") ->
-        [_, stripped_msisdn] = String.split(msisdn, "_")
-
-        stripped_msisdn
-
-      true ->
-        msisdn
     end
   end
 
@@ -631,7 +626,7 @@ defmodule MobupayWeb.TransferController do
         lookup
 
       _ ->
-        {:error, "E#{EC.get("invalid_phone_number")} - Phone number is invalid"}
+        {:error, "Phone number is invalid"}
     end
   end
 

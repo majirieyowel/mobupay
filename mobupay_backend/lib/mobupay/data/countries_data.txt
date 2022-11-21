@@ -1,3 +1,0 @@
-country country_code dialing_code  msisdn_length currency currency_unit
-Ghana    GH           233           9            GHS        100
-Nigeria  NG           234           10           NGN        100

@@ -77,6 +77,9 @@ defmodule Mobupay.Account do
     |> Repo.exists?()
   end
 
+  @doc """
+  Checks if a phone number is registered in the system
+  """
   def msisdn_exists?(msisdn) do
     User
     |> where([u], u.msisdn == ^msisdn)
@@ -89,18 +92,33 @@ defmodule Mobupay.Account do
 
   # Contacts
 
-  @spec list_contacts(integer()) :: [%Mobupay.Account.Contact{}]
+  @doc """
+  Checks if a phone number is registered to a user
+  """
+  def contact_exists?(user_id, msisdn) do
+    Contact
+    |> where([co], co.msisdn == ^msisdn)
+    |> where([co], co.user_id == ^user_id)
+    |> Repo.exists?()
+  end
+
+  @spec list_contacts(integer()) :: [%Contact{}]
   def list_contacts(user_id) do
     Contact
     |> where([co], co.user_id == ^user_id)
     |> Repo.all()
   end
 
-  # def list_contacts(user_id, params) do
-  #   Contact
-  #   |> where([co], co.user_id == ^user_id)
-  #   |> Repo.paginate(params)
-  # end
+  @doc """
+  Get contact belonging to an account using the ref
+  """
+  @spec get_user_contact_by_ref(%User{}, String.t()) :: %Contact{} | nil
+  def get_user_contact_by_ref(%User{id: user_id}, ref) do
+    Contact
+    |> where([co], co.user_id == ^user_id)
+    |> where([co], co.ref == ^ref)
+    |> Repo.one()
+  end
 
   def create_contact(user, bank_account_params) do
     changeset =
@@ -111,11 +129,18 @@ defmodule Mobupay.Account do
     Repo.insert(changeset)
   end
 
-  def msisdn_exists?(user_id, msisdn) do
-    Contact
-    |> where([co], co.msisdn == ^msisdn)
-    |> where([co], co.user_id == ^user_id)
-    |> Repo.exists?()
+  def update_contact(contact, attrs) do
+    contact
+    |> Contact.update_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a contact
+  """
+  @spec delete_contact(%Contact{}) :: {:ok, %Contact{}} | {:error, Ecto.Changeset.t()}
+  def delete_contact(%Contact{} = contact) do
+    Repo.delete(contact)
   end
 
   def contact_name_exists?(user_id, name) do

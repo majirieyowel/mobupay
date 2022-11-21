@@ -10,8 +10,6 @@
     "unhandled_payment_accept_error": "030",
     "permission_denied_to_payment": "031",
     "transaction_to_same_msisdn": "032",
-    "insufficient_balance": "034",
-    "invalid_phone_number": "035",
     "bank_account_not_found": "036",
     "unhandled_withdrawal_initiation_error": "037",
     "unhandled_withdrawal_completion_error": "038",

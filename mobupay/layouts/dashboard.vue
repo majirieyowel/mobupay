@@ -247,7 +247,6 @@
       <v-spacer></v-spacer>
       <div class="balance" v-if="showHeaderBalance">
         <div class="account">
-          <span>Account Balance:</span>
           <span>
             {{ $auth.$state.user.currency }}
             {{ $auth.$state.user.account_balance | format_money }}
@@ -353,8 +352,9 @@ export default {
   .account span {
     font-weight: bold;
   }
+
   .book span {
-    font-size: 0.864rem;
+    font-size: 0.764rem;
   }
 }
 .app--bar {

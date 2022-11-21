@@ -5,204 +5,190 @@
         <div v-if="showTransferUI">
           <div class="col-12 col-sm-8 col-md-6 send-container">
             <div class="relative" v-if="step == 'fund'">
-              <v-alert color="primary" text type="info">
-                <p class="ma-0 pa-0 text-caption">
-                  Send money to any valid phone number even if it's not
-                  registered with Mobupay.
-                  <br />
-                  You can also retrieve your money back before it's claimed.
-                </p>
-              </v-alert>
-              <v-row align="center">
-                <v-col class="" cols="12">
-                  <v-tabs
-                    @change="form.to_msisdn = ''"
-                    active-class="send--tab--active"
-                    v-model="tab"
-                    :centered="tabCentered"
-                    :left="tabLeft"
-                    background-color="#eee"
-                  >
-                    <v-tab>New Number</v-tab>
-                    <v-tab>Contacts</v-tab>
-                  </v-tabs>
+              <!-- 
+                <v-alert color="primary" text type="info">
+                  <p class="ma-0 pa-0 text-caption">
+                    Send money to any valid phone number even if it's not
+                    registered with Mobupay.
+                    <br />
+                    You can also retrieve your money back before it's claimed.
+                  </p>
+                </v-alert>
+              -->
 
-                  <v-tabs-items v-model="tab">
-                    <v-tab-item>
-                      <v-text-field
-                        v-model="form.to_msisdn"
-                        label=""
-                        hint="International format e.g 2348108125270"
-                        persistent-hint
-                        type="number"
-                        clearable
-                      >
-                      </v-text-field>
-                    </v-tab-item>
-                    <v-tab-item>
-                      <v-autocomplete
-                        v-model="form.to_msisdn"
-                        :items="contacts"
-                        item-text="name"
-                        item-value="msisdn"
-                        label=""
-                        :loading="isLoadingContacts"
-                        clearable
-                      ></v-autocomplete
-                    ></v-tab-item>
-                  </v-tabs-items>
-                </v-col>
-              </v-row>
-
-              <!--
+              <v-form ref="form">
                 <v-row align="center">
-                  <v-col class="d-flex" cols="12">
-                    <v-autocomplete
-                      :items="contacts"
-                      item-text="name"
-                      item-value="msisdn"
-                      label="Phone number"
-                      :loading="isLoadingContacts"
-                      clearable
-                    ></v-autocomplete>
+                  <v-col class="" cols="12">
+                    <v-tabs
+                      @change="form.to_msisdn = ''"
+                      active-class="send--tab--active"
+                      v-model="tab"
+                      :centered="tabCentered"
+                      :left="tabLeft"
+                      background-color="#eee"
+                    >
+                      <v-tab>New Number</v-tab>
+                      <v-tab>Contacts</v-tab>
+                    </v-tabs>
+
+                    <v-tabs-items v-model="tab">
+                      <v-tab-item>
+                        <v-text-field
+                          v-model="form.to_msisdn"
+                          autofocus
+                          label=""
+                          hint="International format e.g 2348108125270"
+                          persistent-hint
+                          type="number"
+                          clearable
+                        >
+                        </v-text-field>
+                      </v-tab-item>
+                      <v-tab-item>
+                        <v-autocomplete
+                          v-model="form.to_msisdn"
+                          :items="contacts"
+                          item-text="name"
+                          item-value="msisdn"
+                          label=""
+                          :loading="isLoadingContacts"
+                          clearable
+                        ></v-autocomplete
+                      ></v-tab-item>
+                    </v-tabs-items>
                   </v-col>
                 </v-row>
-  
+
                 <v-row align="center">
                   <v-col class="d-flex" cols="12">
                     <v-text-field
-                      autofocus
-                      v-model="form.to_msisdn"
-                      label="Phone Number"
-                      hint="International format e.g 2348108125270"
-                      persistent-hint
+                      v-model="form.amount"
+                      label="Amount"
                       type="number"
                     >
                     </v-text-field>
                   </v-col>
                 </v-row>
-              
-              -->
 
-              <v-row align="center">
-                <v-col class="d-flex" cols="12">
-                  <v-text-field
-                    v-model="form.amount"
-                    label="Amount"
-                    type="number"
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
+                <v-row align="center" v-if="showPaymentChannels">
+                  <v-col class="d-flex" cols="12">
+                    <v-select
+                      v-model="form.funding_channel"
+                      :items="funding_channels"
+                      item-text="key"
+                      item-value="value"
+                      label="Payment Channel"
+                    >
+                    </v-select>
+                  </v-col>
+                </v-row>
 
-              <v-row align="center" v-if="showPaymentChannels">
-                <v-col class="d-flex" cols="12">
-                  <v-select
-                    v-model="form.funding_channel"
-                    :items="funding_channels"
-                    item-text="key"
-                    item-value="value"
-                    label="Payment Channel"
-                  >
-                  </v-select>
-                </v-col>
-              </v-row>
+                <v-row align="center" v-if="showCards">
+                  <v-col class="d-flex" cols="12">
+                    <v-select
+                      v-model="form.card"
+                      :items="cards"
+                      item-text="label"
+                      item-value="ref"
+                      persistent-hint
+                      label="Select Card"
+                      hint="You will be prompted to enter your password"
+                      clearable
+                    >
+                    </v-select>
+                  </v-col>
+                </v-row>
 
-              <v-row align="center" v-if="showCards">
-                <v-col class="d-flex" cols="12">
-                  <v-select
-                    v-model="form.card"
-                    :items="cards"
-                    item-text="label"
-                    item-value="ref"
-                    persistent-hint
-                    label="Select Card"
-                    hint="You will be prompted to enter your password"
-                    clearable
-                  >
-                  </v-select>
-                </v-col>
-              </v-row>
-
-              <v-row align="center">
-                <v-col class="d-flex" cols="12">
-                  <v-text-field
-                    v-model="form.narration"
-                    label="Narration (optional)"
-                    clearable
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
-
-              <v-row align="center">
-                <v-col class="d-flex justify-center" cols="12">
-                  <v-btn
-                    @click="prePaymentCheck"
-                    :loading="submitting"
-                    class="button"
-                    color="#0052ff"
-                    tile
-                    >Proceed</v-btn
-                  >
-                </v-col>
-              </v-row>
-            </div>
-
-            <div v-if="step == 'verify'">
-              <div v-if="verifyingTransaction">Verifying...</div>
-              <Success v-else title="Payment Successful">
-                <p>
-                  You have sent {{ transactionCurrency
-                  }}{{ transactionAmount | format_money }} to
-                  <b>{{ toMsisdn }}</b>
-                  <br />
-                  <small>You can still get your money back</small>
-                </p>
-
-                <div>
-                  <NuxtLink
-                    :to="{
-                      name: 'dashboard',
-                      params: { dashboard: $auth.$state.user.msisdn },
-                    }"
-                  >
-                    <v-btn color="primary"> Dashboard </v-btn>
-                  </NuxtLink>
-                </div>
-              </Success>
-            </div>
-
-            <!--
-            
-              <div v-if="step == 'email'">
-                <p>ADD YOUR EMAIL</p>
-  
-                <p>
-                  Before creating your first transaction please add your email
-                  address
-                </p>
-                <p>This is for transactions notifications only</p>
-  
                 <v-row align="center">
-                  <v-col class="d-flex" cols="12" sm="6">
+                  <v-col class="d-flex" cols="12">
                     <v-text-field
-                      v-model="email_form.email"
-                      label="Email Address"
+                      v-model="form.narration"
+                      label="Narration (optional)"
+                      clearable
                     >
                     </v-text-field>
                   </v-col>
                 </v-row>
-  
+
                 <v-row align="center">
-                  <v-col class="d-flex" cols="12" sm="6">
-                    <v-btn @click="add_email" elevation="2" outlined raised small
+                  <v-col class="d-flex justify-center" cols="12">
+                    <v-btn
+                      @click="prePaymentCheck"
+                      :loading="submitting"
+                      class="button"
+                      color="#0052ff"
+                      tile
                       >Proceed</v-btn
                     >
                   </v-col>
                 </v-row>
+              </v-form>
+            </div>
+
+            <div v-if="verifyingTransaction">Verifying...</div>
+
+            <div v-if="step == 'success'">
+              <div v-if="!verifiedTranxResp.metadata.receiver_registered">
+                <v-alert outlined color="orange" border="left" text>
+                  You've sent money to
+                  <b>{{ verifiedTranxResp.transaction.to_msisdn }}</b> which is
+                  not registered with Mobupay. We will attempt to notify them to
+                  signup and claim their money.
+                </v-alert>
               </div>
-            -->
+              <div class="transfer-success">
+                <div class="success-image">
+                  <img src="~/assets/img/check.png" />
+                </div>
+                <div class="success-content">
+                  <p class="success-title">Transfer successful</p>
+
+                  <div class="success-breakdown">
+                    <p>
+                      <span>Amount: </span
+                      ><b
+                        >{{ $auth.$state.user.currency
+                        }}{{
+                          verifiedTranxResp.transaction.amount | format_money
+                        }}</b
+                      >
+                    </p>
+                    <p>
+                      <span>Phone Number: </span
+                      ><b>{{ verifiedTranxResp.transaction.to_msisdn }}</b>
+                    </p>
+                    <p><span>Fee: </span> <b>NGN0.00</b></p>
+                    <p>
+                      <span> Transaction ID: </span
+                      ><b>{{ verifiedTranxResp.transaction.to_ref }}</b>
+                    </p>
+                    <p>
+                      <span> Payment Method: </span
+                      ><b>{{
+                        verifiedTranxResp.transaction.payment_channel
+                      }}</b>
+                    </p>
+                  </div>
+                </div>
+                <div class="success-actions">
+                  <v-btn class="button" color="error" tile>RECLAIM</v-btn>
+
+                  <v-btn
+                    @click="resetPayment"
+                    class="button"
+                    color="#0052ff"
+                    tile
+                    >CLOSE</v-btn
+                  >
+                </div>
+                <div class="success-help">
+                  <small>
+                    <v-icon> mdi-chat-question-outline </v-icon> Need help with
+                    this transaction?</small
+                  >
+                </div>
+              </div>
+            </div>
           </div>
 
           <!--Verify Email Modal-->
@@ -265,32 +251,6 @@
         </div>
       </v-col>
     </v-row>
-
-    <div class="text-center">
-      <v-dialog persistent v-model="successModal" width="500px">
-        <v-card>
-          <Success
-            @close="successModal = false"
-            class="pt-15"
-            title="Payment Successful"
-          >
-            <p class="my-5 sent-summary">
-              You have sent {{ transactionCurrency
-              }}{{ transactionAmount | format_money }} to
-              <b>{{ toMsisdn }}</b>
-              <br />
-            </p>
-            <v-alert class="mt-10 mb-0" color="orange" text>
-              <v-icon color="orange">mdi-information-outline</v-icon>
-              <small class="ma-0 pa-0">
-                You can retrieve your money back by clicking the "reclaim"
-                button, in your transactions history.
-              </small>
-            </v-alert>
-          </Success>
-        </v-card>
-      </v-dialog>
-    </div>
   </v-container>
 </template>
 
@@ -307,52 +267,44 @@ export default {
   head: {
     script: [{ src: "https://js.paystack.co/v2/inline.js" }],
   },
-  // meta: {
-  //   breadcrumbs: [
-  //     {
-  //       text: "Send Money",
-  //       disabled: true,
-  //       help: true,
-  //       to: "#",
-  //     },
-  //   ],
-  // },
   computed: mapGetters(["cards"]),
-  data: () => ({
-    submitting: false,
-    successModal: false,
-    showTransferUI: true,
-    showEmailModal: false,
-    submittingEmail: false,
-    showVerifyPasswordUI: false,
-    verifyingTransaction: true,
-    showEmailUI: false,
-    step: "fund",
-    showCards: false,
-
-    showPaymentChannels: false,
-    transactionAmount: "",
-    toMsisdn: "",
-    transactionCurrency: "",
-    funding_channels: [],
-    isLoadingContacts: true,
-    contacts: [],
-    tab: 0,
-    tabCentered: true,
-    tabLeft: false,
-    email_form: {
-      email: "",
-    },
-    form: {
+  data() {
+    const defaultForm = Object.freeze({
       card: "",
-      to_msisdn: "2348108125270",
+      to_msisdn: "",
       amount: "",
       narration: "",
       ip_address: "",
       device: "",
       funding_channel: "Default",
-    },
-  }),
+    });
+
+    return {
+      submitting: false,
+      successModal: false,
+      showTransferUI: true,
+      showEmailModal: false,
+      submittingEmail: false,
+      showVerifyPasswordUI: false,
+      verifyingTransaction: false,
+      showEmailUI: false,
+      step: "fund",
+      showCards: false,
+      showPaymentChannels: false,
+      funding_channels: [],
+      isLoadingContacts: true,
+      contacts: [],
+      tab: 0,
+      tabCentered: false,
+      tabLeft: true,
+      email_form: {
+        email: "",
+      },
+      form: Object.assign({}, defaultForm),
+      verifiedTranxResp: {},
+      defaultForm,
+    };
+  },
   watch: {
     "form.funding_channel"(newValue, oldValue) {
       switch (newValue) {
@@ -392,8 +344,6 @@ export default {
       this.initiatePayment();
     },
     async initiatePayment() {
-      // check for email added
-
       if (!this.$auth.$state.user.email) {
         this.showEmailModal = true;
         return;
@@ -405,16 +355,13 @@ export default {
       this.form.device = window.navigator.userAgent;
       try {
         const response = await this.$axios.$post("/transfer", this.form);
-        switch (response.data.funding_channel) {
-          case "Default":
-            this.handleDefaultPayment(response.data);
+        switch (response.data.payment_status) {
+          case "INCOMPLETE":
+            this.handleIncompletePayment(response.data);
             break;
-          // case "Existing Card":
-          //   this.paymentSuccess(response.data);
-          // case "Balance":
-          //   this.$store.commit("updateBalance", response.data.new_balance);
-          //   this.paymentSuccess(response.data);
-          //   break;
+          case "COMPLETE":
+            this.handleCompletePayment(response.data);
+            break;
         }
       } catch (error) {
         errorCatch(error, this);
@@ -442,19 +389,34 @@ export default {
         this.submittingEmail = false;
       }
     },
-    async handleDefaultPayment({ email, paystack_pk, channels, amount, ref }) {
+    handleCompletePayment(data) {
+      this.step = "success";
+      this.verifiedTranxResp = data;
+      this.$store.commit("updateBalance", data.balance);
+    },
+    async handleIncompletePayment(data) {
+      switch (data.merchant.title) {
+        case "paystack":
+          this.handleWithPaystack(data);
+
+          break;
+        case "stripe":
+          break;
+      }
+    },
+    async handleWithPaystack({ customer, merchant, transaction, ref }) {
       try {
         const paystack = new PaystackPop();
 
         paystack.newTransaction({
-          key: paystack_pk,
-          email: email,
-          amount: amount,
-          channels: channels,
-          reference: ref,
-          onSuccess: (transaction) => {
-            if (transaction.status == "success") {
-              this.verifyDefaultPayment(transaction.reference);
+          key: merchant.key,
+          email: customer.email,
+          amount: transaction.amount,
+          channels: ["card"],
+          reference: transaction.ref,
+          onSuccess: (resp) => {
+            if (resp.status == "success") {
+              this.verifyPaystackPayment(resp.reference);
             } else {
               this.$toast.error("Payment was not successful!");
             }
@@ -470,25 +432,24 @@ export default {
       }
     },
 
-    async verifyDefaultPayment(ref) {
+    async verifyPaystackPayment(ref) {
       this.verifyingTransaction = true;
+
+      // TODO: figure out why the verification loader does not work and also handle failed verification
 
       try {
         const response = await this.$axios.post("/transfer/verify", { ref });
-        this.paymentSuccess(response.data.data);
+        let data = response.data.data;
+
+        this.step = "success";
+        this.verifiedTranxResp = data;
+        this.$store.commit("mayBeAddCard", data.card);
+        this.verifyingTransaction = false;
       } catch (error) {
         errorCatch(error, this);
       }
     },
-    async verifyTransaction(payload) {
-      this.verifyingTransaction = true;
-      try {
-        const response = await this.$axios.post("/transfer/verify", payload);
-        this.paymentSuccess(response.data.data);
-      } catch (error) {
-        errorCatch(error, this);
-      }
-    },
+
     setupCards() {
       if (this.cards.length > 0) {
         for (let index = 0; index < this.cards.length; index++) {
@@ -501,21 +462,21 @@ export default {
       const minimumBalance = 10000; //kobo
       const allowed_payment_channels = [
         {
-          key: "Default",
+          key: "Card (Default)",
           value: "Default",
         },
       ];
-      if (this.$auth.$state.user.account_balance >= minimumBalance) {
-        let key = `Balance (${
-          this.$auth.$state.user.currency
-        } ${this.$options.filters.format_money(
-          this.$auth.$state.user.account_balance
-        )})`;
-        allowed_payment_channels.push({
-          key,
-          value: "Balance",
-        });
-      }
+      // if (this.$auth.$state.user.account_balance >= minimumBalance) {
+      let key = `Balance (${
+        this.$auth.$state.user.currency
+      } ${this.$options.filters.format_money(
+        this.$auth.$state.user.account_balance
+      )})`;
+      allowed_payment_channels.push({
+        key,
+        value: "Balance",
+      });
+      // }
       if (this.cards.length > 0) {
         allowed_payment_channels.push({
           key: "Existing Card",
@@ -527,14 +488,7 @@ export default {
         this.funding_channels = allowed_payment_channels;
       }
     },
-    paymentSuccess(data) {
-      this.step = "verify";
-      this.transactionAmount = data.transaction_amount;
-      this.transactionCurrency = data.transaction_currency;
-      this.toMsisdn = data.to_msisdn;
-      this.$store.commit("mayBeAddCard", data.card);
-      this.verifyingTransaction = false;
-    },
+
     maybeLoadQueryContact() {
       // Grab msisdn from query params if exist
       let query = this.$route.query;
@@ -543,6 +497,10 @@ export default {
         this.form.to_msisdn = query.contact;
       }
       console.log(query);
+    },
+    resetPayment() {
+      this.step = "fund";
+      this.form = Object.assign({}, this.defaultForm);
     },
   },
   async fetch() {
@@ -566,7 +524,6 @@ export default {
   mounted() {
     this.setupCards();
     this.setupPaymentChannels();
-    console.log(this.$options.filters.format_money("4000"));
   },
 };
 </script>
@@ -574,6 +531,44 @@ export default {
 <style lang="scss" scoped>
 .v-application .text-caption {
   font-size: 0.85rem !important;
+}
+.transfer-success {
+  // margin-top: 10%;
+  .success-image {
+    height: 85px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    background: #3ab54ba8;
+    padding: 8px 0px;
+  }
+  .success-content {
+    padding: 10px;
+  }
+  .success-title {
+    font-weight: 800;
+    font-size: 24px;
+    text-align: center;
+    margin: 20px 0px;
+    color: #3ab54b;
+  }
+
+  .success-breakdown {
+    p {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 0.5px dashed #a49e9e;
+    }
+  }
+
+  .success-actions {
+    text-align: center;
+    padding: 30px 0;
+  }
+  img {
+    width: 70px;
+  }
 }
 .email-padding {
   padding: 0px 24px;

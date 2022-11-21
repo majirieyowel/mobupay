@@ -118,7 +118,7 @@ export default {
   // loading: false,
 
   loading: {
-    color: "#87d37c",
+    color: "#ff9800",
     height: "2px",
     throttle: 0,
     continuous: true,

@@ -24,3 +24,4 @@ mobupay-*.tar
 
 .env
 
+/.elixir_ls/

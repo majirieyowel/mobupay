@@ -14,7 +14,7 @@ defmodule MobupayWeb.OnboardController do
 
   @onboard_key_identifier "_onboarding_otp_"
 
-  def getting_started(conn, _params), do: conn |> Response.ok(CountryData.get_list())
+  def getting_started(conn, _params), do: Response.ok(conn, CountryData.get_list())
 
   def check_msisdn(conn, %{"msisdn" => msisdn, "country" => country} = params) do
     Logger.info("Received request to check MSISDN: #{msisdn}, Country: #{country}")

@@ -29,9 +29,7 @@ defmodule MobupayWeb.ContactController do
     with {:ok, %Mobupay.Account.Contact{} = contact} <-
            user |> Account.create_contact(updated_params) do
       conn
-      |> Response.ok(%{
-        contact: contact
-      })
+      |> Response.ok(contact)
     else
       {:error, %Ecto.Changeset{valid?: false} = changeset} ->
         conn
@@ -47,25 +45,49 @@ defmodule MobupayWeb.ContactController do
     end
   end
 
-  def delete(%Plug.Conn{assigns: %{current_user: _user}} = conn, %{"id" => bank_account_ref}) do
-    Logger.info("Received request to delete bank account with ref #{inspect(bank_account_ref)}")
+  def delete(%Plug.Conn{assigns: %{current_user: user}} = conn, %{"id" => contact_ref}) do
+    Logger.info("Received request to delete contact with ref #{inspect(contact_ref)}")
 
-    case Account.list_bank_account_by_ref(bank_account_ref) do
-      %Account.BankAccount{} = bank_account ->
-        # TODO: Save event
-        Account.delete_bank_account(bank_account)
+    case Account.get_user_contact_by_ref(user, contact_ref) do
+      %Account.Contact{} = contact ->
+        Account.delete_contact(contact)
 
         conn
-        |> Response.ok(%{}, :ok, "Bank account deleted successfully")
+        |> Response.ok(%{}, :ok, "Contact deleted successfully")
 
       nil ->
         conn
-        |> Response.error(404, "Bank account not found")
+        |> Response.error(404, "Contact not found")
     end
+  end
 
-    # Account.list_bank_account_by_ref
+  # TODO: WORK on this function  s
+  def update(
+        %Plug.Conn{assigns: %{current_user: %{id: user_id} = user}} = conn,
+        %{"id" => contact_ref, "msisdn" => msisdn, "name" => name} = params
+      ) do
+    Logger.info(
+      "Received request to update contact ref #{inspect(contact_ref)} with params #{inspect(params)}"
+    )
 
-    # Account.delete_bank_account()
+    with %Account.Contact{} = contact <- Account.get_user_contact_by_ref(user, contact_ref),
+         {:ok, updated_contact} <-
+           Account.update_contact(contact, Map.put(params, "user_id", user_id)) do
+      conn
+      |> Response.ok(updated_contact, :ok, "Contact updated successfully")
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        conn
+        |> Response.ecto_changeset_error(changeset)
+
+      error ->
+        Logger.error(
+          "Error updating contact. Binding:  #{inspect(binding())}. Error: #{inspect(error)}"
+        )
+
+        conn
+        |> Response.error(500, "Unable to update contact")
+    end
   end
 
   def import(%Plug.Conn{assigns: %{current_user: %{country: country}}} = conn, %{

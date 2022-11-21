@@ -7,6 +7,8 @@ SECURITY:
 Add max attempts for validating OTP (3) - Then flag account (Unusual activity)
 Transaction can only be initiated and completed from one device
 Transaction can be cancelled from any device
+CAPTCHA
+Enforce an expiry on passwords, after which a user must change their password also log all previous passwords so it's not reusable 
 
 OTHER
 Save transaction funding source data e.g Card last 4, BIN, Bank (Table already created)

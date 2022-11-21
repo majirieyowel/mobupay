@@ -35,6 +35,14 @@ defmodule Mobupay.Account.Contact do
     |> validate_unique_name(attrs)
   end
 
+  def update_changeset(contact, attrs) do
+    contact
+    |> IO.inspect()
+    |> cast(attrs, @required_attrs)
+    |> validate_unique_msisdn_update(attrs)
+    |> validate_unique_name(attrs)
+  end
+
   defp validate_required_fields(changeset) do
     changeset
     |> validate_required([:country_code], message: "Country is required")
@@ -42,13 +50,29 @@ defmodule Mobupay.Account.Contact do
     |> validate_required([:name], message: "Contact name is required")
   end
 
-  defp validate_unique_msisdn(changeset, %{"msisdn" => msisdn, "user_id" => user_id}) do
-    case Account.msisdn_exists?(user_id, msisdn) do
+  defp validate_unique_msisdn_update(changeset, %{"msisdn" => msisdn, "user_id" => user_id}) do
+    IO.inspect(changeset)
+
+    case Account.contact_exists?(user_id, msisdn) do
       true ->
         add_error(
           changeset,
           :msisdn,
-          "Contact already exists"
+          "Contact number (#{msisdn}) exists"
+        )
+
+      _ ->
+        changeset
+    end
+  end
+
+  defp validate_unique_msisdn(changeset, %{"msisdn" => msisdn, "user_id" => user_id}) do
+    case Account.contact_exists?(user_id, msisdn) do
+      true ->
+        add_error(
+          changeset,
+          :msisdn,
+          "Contact number (#{msisdn}) exists"
         )
 
       _ ->

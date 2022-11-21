@@ -40,13 +40,14 @@ defmodule Mobupay.Businesses.Business do
     changeset
     |> validate_required([:ref], message: "Reference os required")
     |> validate_required([:name], message: "Business name is required")
+
     # |> validate_required([:email], message: "Contact name is required")
     # |> validate_required([:phone], message: "Contact name is required")
     # |> validate_required([:logo], message: "Logo is required")
     # |> validate_required([:address], message: "Contact name is required")
   end
 
-    defp validate_unique_business_name(changeset, %{"nuban" => nuban, "user_id" => user_id}) do
+  defp validate_unique_business_name(changeset, %{"nuban" => nuban, "user_id" => user_id}) do
     case Mobupay.Account.nuban_exists?(user_id, nuban) do
       true ->
         add_error(

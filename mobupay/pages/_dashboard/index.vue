@@ -94,13 +94,25 @@
                     {{
                       $auth.$state.user.msisdn == item.to_msisdn
                         ? "You"
-                        : remove_wait(item.to_msisdn)
+                        : item.to_msisdn
                     }}
                   </td>
-                  <td>
-                    {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-"
-                    }}{{ item.amount | format_money }}
-                  </td>
+                  <td
+                    v-html="
+                      displayTransactionAmount(
+                        item.status,
+                        item.amount,
+                        item.to_msisdn
+                      )
+                    "
+                  ></td>
+                  <!-- 
+                    <td>
+                      {{ displayTransactionAmount }}
+                      {{ $auth.$state.user.msisdn == item.to_msisdn ? "+" : "-"
+                      }}{{ item.amount | format_money }}
+                    </td>
+                  -->
 
                   <td>
                     {{
@@ -375,9 +387,34 @@ export default {
     /** Support */
     showSupportDialogue: false,
   }),
-  computed: mapGetters(["transactions", "withdrawals", "breadcrumbs"]),
+  computed: {
+    ...mapGetters(["transactions", "withdrawals", "breadcrumbs"]),
+  },
 
   methods: {
+    displayTransactionAmount(status, amount, to_msisdn) {
+      let amount_formatted = this.$options.filters.format_money(amount);
+      switch (status) {
+        case "floating":
+          return amount_formatted;
+          break;
+        case "rejected":
+          return `<span style="text-decoration: line-through;">${amount_formatted}<span>`;
+
+          break;
+        case "accepted":
+          return `<span">${
+            this.$auth.$state.user.msisdn == to_msisdn ? "+" : "-"
+          }${amount_formatted}<span>`;
+
+          break;
+
+        default:
+          return "--";
+          break;
+      }
+      return `<b>100 ${status}</b>`;
+    },
     handleTabChange(event) {
       console.log("Tab changed", event);
     },
@@ -386,9 +423,6 @@ export default {
     },
     refreshWithdrawals() {
       this.loadWithdrawals();
-    },
-    remove_wait(string) {
-      return string.startsWith("wait_") ? string.split("_")[1] : string;
     },
     async loadTransactions() {
       let transactions = await this.$axios.$get("/transaction");
@@ -437,7 +471,11 @@ export default {
       this.showRejectDialogue = false;
 
       this.handle(item_ref, "reject", () => {
-        this.$toast.success("N300 rejected successfully");
+        this.$toast.success(
+          `${
+            this.$auth.$state.user.currency
+          }${this.$options.filters.format_money(amount)} rejected successfully`
+        );
       });
     },
     reclaimMoney(item_ref) {

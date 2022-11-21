@@ -1,9 +1,7 @@
 defmodule Mobupay.Repo.Migrations.CreateBusinessesTable do
-
   use Ecto.Migration
 
   def change do
-
     create table(:businesses) do
       add :ref, :string, null: false
       add :name, :string, null: false
@@ -15,6 +13,5 @@ defmodule Mobupay.Repo.Migrations.CreateBusinessesTable do
     end
 
     create(index(:businesses, [:user_id]))
-
   end
 end

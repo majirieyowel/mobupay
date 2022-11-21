@@ -95,7 +95,6 @@ defmodule Mobupay.Transactions do
   @doc """
     Verifies if a user has sufficient funds
   """
-  # TODO: verify from account balance or book balance
   @spec verify_sufficient_funds(%Account.User{}, integer(), atom()) ::
           {:ok, balance :: integer()} | {:error, String.t()}
   def verify_sufficient_funds(user, amount, :book_balance) do
@@ -104,19 +103,17 @@ defmodule Mobupay.Transactions do
     if balance > amount do
       {:ok, balance}
     else
-      {:error, "E#{EC.get("insufficient_balance")} - Insufficient Balance"}
+      {:error, "Insufficient Balance"}
     end
   end
 
-  @spec verify_sufficient_funds(%Account.User{}, integer(), :account_balance) ::
-          {:ok, balance :: integer()} | {:error, String.t()}
   def verify_sufficient_funds(user, amount, :account_balance) do
     balance = get_account_balance(user)
 
     if balance > amount do
       {:ok, balance}
     else
-      {:error, "E#{EC.get("insufficient_balance")} - Insufficient Balance"}
+      {:error, "Insufficient Balance"}
     end
   end
 
@@ -130,7 +127,6 @@ defmodule Mobupay.Transactions do
     amount
   end
 
-  # TODO obsolete
   @doc """
     Fetches a users account balance
   """
@@ -141,7 +137,13 @@ defmodule Mobupay.Transactions do
       |> where([l], l.msisdn == ^msisdn)
       |> Repo.aggregate(:sum, :amount)
 
-    amount
+    case amount do
+      nil ->
+        0
+
+      _ ->
+        amount
+    end
   end
 
   @doc """
@@ -154,7 +156,13 @@ defmodule Mobupay.Transactions do
       |> where([l], l.msisdn == ^msisdn)
       |> Repo.aggregate(:sum, :amount)
 
-    amount
+    case amount do
+      nil ->
+        0
+
+      _ ->
+        amount
+    end
   end
 
   @doc """

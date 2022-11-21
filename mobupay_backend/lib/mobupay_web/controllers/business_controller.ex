@@ -5,17 +5,18 @@ defmodule MobupayWeb.BusinessController do
   alias Mobupay.Businesses
   require Logger
 
-
-
   def create(%Plug.Conn{assigns: %{current_user: user}} = conn, params) do
-      Logger.info("Received request to create business account with details #{inspect(params)}")
+    Logger.info("Received request to create business account with details #{inspect(params)}")
 
     with {:ok, %Businesses.Business{} = business} <-
            Businesses.create_business(user, params) do
       conn
-      |> Response.ok(%{
-        business: business
-      }, 201)
+      |> Response.ok(
+        %{
+          business: business
+        },
+        201
+      )
     else
       {:error, %Ecto.Changeset{valid?: false} = changeset} ->
         conn
@@ -30,5 +31,4 @@ defmodule MobupayWeb.BusinessController do
         |> Response.error(:bad_request)
     end
   end
-
 end

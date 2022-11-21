@@ -83,7 +83,7 @@ defmodule MobupayWeb.TransferControllerTest do
       assert status == :initiated
       assert amount == expected_amount
       assert from_msisdn == msisdn
-      assert transformed_to_msisdn == "wait_" <> to_msisdn
+      assert transformed_to_msisdn == to_msisdn
     end
   end
 
@@ -123,7 +123,7 @@ defmodule MobupayWeb.TransferControllerTest do
       request_to_msisdn = "234" <> Nanoid.generate(10, "01233456789")
 
       %Transactions.Transaction{amount: transaction_amount} =
-        insert(:transaction, ref: ref, to_msisdn: "wait_" <> request_to_msisdn)
+        insert(:transaction, ref: ref, to_msisdn: request_to_msisdn)
 
       payload = %{
         ref: ref
