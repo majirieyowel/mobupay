@@ -39,6 +39,7 @@ export default {
     // https://go.nuxtjs.dev/vuetify
     "@nuxtjs/vuetify",
     "@nuxtjs/moment",
+    '@nuxtjs/dotenv'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -113,7 +114,7 @@ export default {
 
   axios: {
     // proxy: true
-    baseURL: "http://localhost:4000/api/v1",
+    baseURL: process.env.BACKEND_URL,
   },
   // loading: false,
 

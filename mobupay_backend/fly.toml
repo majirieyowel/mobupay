@@ -1,4 +1,4 @@
-# fly.toml file generated for mobupay on 2022-11-23T16:14:07+01:00
+# fly.toml file generated for mobupay on 2022-11-23T17:37:25+01:00
 
 app = "mobupay"
 kill_signal = "SIGTERM"

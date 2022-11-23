@@ -10,6 +10,10 @@ defmodule MobupayWeb.Router do
     plug(MobupayWeb.Plugs.AssignGuardianResource)
   end
 
+  scope "/", MobupayWeb do
+    get "/", PageController, :index
+  end
+
   scope "/api/v1", MobupayWeb, as: :v1 do
     pipe_through :api
 

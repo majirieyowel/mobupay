@@ -151,6 +151,9 @@ export default {
       console.log("Catch", error);
     }
   },
+  mounted() {
+    console.log(process.env.BACKEND_URL);
+  },
 };
 </script>
 
