@@ -25,5 +25,8 @@ Option to add new bank account from withdrawal page
 Add currency to transactions table
 Make onboarding password field togglable
 
+THINK OF:
+How to validate email for notifications.
+
 
 
