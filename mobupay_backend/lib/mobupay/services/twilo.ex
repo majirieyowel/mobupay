@@ -7,23 +7,13 @@ defmodule Mobupay.Services.Twilio do
 
   @request_options [{:timeout, 32_000}, {:recv_timeout, 20_000}]
 
-  @twilio_sid System.get_env("TWILIO_SID")
-
-  @twilio_base_url System.get_env("TWILIO_BASE_URL")
-
-  @twilio_lookup_url System.get_env("TWILIO_LOOKUP_URL")
-
-  @twilio_auth_token System.get_env("TWILIO_AUTH_TOKEN")
-
-  @twilio_number System.get_env("TWILIO_PHONE_NUMBER")
-
   @doc """
   Lookup an MSISDN on Twilio
 
   """
   @spec lookup(String.t()) :: {:ok, any()} | {:error, any()}
   def lookup(msisdn) do
-    endpoint = "#{@twilio_lookup_url}v1/PhoneNumbers/#{msisdn}"
+    endpoint = "#{System.get_env("TWILIO_LOOKUP_URL")}v1/PhoneNumbers/#{msisdn}"
 
     case get_request(__MODULE__, endpoint, headers(), request_options()) do
       {:ok, %{"phone_number" => _msisdn}} = resp ->
@@ -48,12 +38,13 @@ defmodule Mobupay.Services.Twilio do
   """
   @spec send(String.t(), String.t()) :: {:ok, any()} | {:error, any()}
   def send(msisdn, message) do
-    endpoint = "#{@twilio_base_url}2010-04-01/Accounts/#{@twilio_sid}/Messages.json"
+    endpoint =
+      "#{System.get_env("TWILIO_BASE_URL")}2010-04-01/Accounts/#{System.get_env("TWILIO_SID")}/Messages.json"
 
     # payload =
     #   ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}&StatusCallback=https://webhook.site/19151fc9-fd8f-4907-a4db-df81c42729f1}
 
-    payload = ~s{Body=#{message}&From=#{@twilio_number}&To=#{msisdn}}
+    payload = ~s{Body=#{message}&From=#{System.get_env("TWILIO_PHONE_NUMBER")}&To=#{msisdn}}
 
     Logger.info("Twilio: Sending message with payload: #{payload}")
 
@@ -72,5 +63,7 @@ defmodule Mobupay.Services.Twilio do
       header_list
   end
 
-  defp auth_token(), do: "#{@twilio_sid}:#{@twilio_auth_token}" |> :base64.encode()
+  defp auth_token(),
+    do:
+      "#{System.get_env("TWILIO_SID")}:#{System.get_env("TWILIO_AUTH_TOKEN")}" |> :base64.encode()
 end

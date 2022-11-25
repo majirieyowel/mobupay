@@ -118,6 +118,8 @@ export default {
         this.$axios.$get(process.env.ipURL),
       ]);
 
+      console.log("IP URL: ", process.env.ipURL);
+
       const firstForm = this.steps[0];
 
       const supportedCountries = gettingStarted.data;
@@ -128,10 +130,12 @@ export default {
         firstForm.params.supportedCountries.push(element.country);
       }
       const ip_addr = ipLookup.origin || null;
+      console.log("IP ADDR: ", ip_addr);
       if (this.validate_ip(ip_addr)) {
         const ip_info = await this.$axios.$get(
           `https://ipinfo.io/${ip_addr}?token=7afa17ebc35a9d`
         );
+        console.log("IP INFO: ", ip_info);
         const { country, city, region } = ip_info;
         firstForm.params.city = city;
         firstForm.params.region = region;
@@ -152,7 +156,7 @@ export default {
     }
   },
   mounted() {
-    console.log(process.env.BACKEND_URL);
+    console.log("BACKEND URL: ", process.env.BACKEND_URL);
   },
 };
 </script>
