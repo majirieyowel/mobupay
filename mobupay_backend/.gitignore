@@ -23,5 +23,6 @@ erl_crash.dump
 mobupay-*.tar
 
 .env
+.env_prod
 
 /.elixir_ls/

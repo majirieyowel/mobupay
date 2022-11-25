@@ -46,7 +46,7 @@ defmodule MobupayWeb.Endpoint do
   plug Plug.Session, @session_options
 
   plug CORSPlug,
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", ~r/https?.*mobupay\.vercel\d?\.app$/],
     headers: [
       "_hash",
       "Authorization",

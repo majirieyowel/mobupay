@@ -176,11 +176,10 @@ defmodule MobupayWeb.OnboardController do
              @onboard_otp_expiration
            ) do
       # async
-      Task.Supervisor.async_nolink(Mobupay.TaskSupervisor, fn ->
+      Task.Supervisor.async(Mobupay.TaskSupervisor, fn ->
         message = "#{otp} is your roundup registration code."
-        IO.inspect(self(), label: "Process: ")
-        IO.inspect(message)
-        # Twilio.send(msisdn, message)
+        Logger.info(message)
+        Twilio.send(msisdn, message)
       end)
 
       {:ok, otp}
