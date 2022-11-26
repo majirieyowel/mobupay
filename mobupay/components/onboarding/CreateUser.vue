@@ -119,6 +119,7 @@ export default {
       }
     },
     setup() {
+      console.log("Params for CreateUser: ", this.params);
       // assign props
       this.form.msisdn = this.params.msisdn;
       this.form.city = this.params.city;

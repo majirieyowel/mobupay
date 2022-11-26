@@ -115,10 +115,8 @@ export default {
     try {
       const [gettingStarted, ipLookup] = await Promise.all([
         this.$axios.$get("/onboard/getting-started"),
-        this.$axios.$get("https://httpbin.org/ip"),
+        this.$axios.$get(process.env.ipURL),
       ]);
-
-      console.log("IP URL: ", process.env.ipURL);
 
       const firstForm = this.steps[0];
 
@@ -142,6 +140,8 @@ export default {
         let matched_country = gettingStarted.data.filter((item) => {
           return item.country_code === country;
         });
+
+        console.log(matched_country);
 
         if (matched_country.length > 0) {
           firstForm.params.country = matched_country[0].country;
