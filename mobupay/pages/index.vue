@@ -133,15 +133,12 @@ export default {
         const ip_info = await this.$axios.$get(
           `https://ipinfo.io/${ip_addr}?token=7afa17ebc35a9d`
         );
-        console.log("IP INFO: ", ip_info);
         const { country, city, region } = ip_info;
         firstForm.params.city = city;
         firstForm.params.region = region;
         let matched_country = gettingStarted.data.filter((item) => {
           return item.country_code === country;
         });
-
-        console.log(matched_country);
 
         if (matched_country.length > 0) {
           firstForm.params.country = matched_country[0].country;
@@ -155,7 +152,6 @@ export default {
       console.log("Catch", error);
     }
   },
-  fetchOnServer: false,
   mounted() {
     console.log("BACKEND URL: ", process.env.BACKEND_URL);
   },
