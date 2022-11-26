@@ -233,7 +233,7 @@
                       tile
                       @click="add_email"
                     >
-                      Save Email
+                      Save Email & Proceed
                     </v-btn>
                   </v-card-actions>
                 </v-card>
@@ -350,8 +350,8 @@ export default {
       }
 
       this.submitting = true;
-      let ip = await this.$axios.$get(process.env.ipURL);
-      this.form.ip_address = ip.origin;
+      let ip = await this.$axios.$get(process.env.ipInfo);
+      this.form.ip_address = ip.ip;
       this.form.device = window.navigator.userAgent;
       try {
         const response = await this.$axios.$post("/transfer", this.form);

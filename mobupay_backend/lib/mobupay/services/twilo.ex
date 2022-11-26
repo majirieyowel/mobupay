@@ -44,11 +44,18 @@ defmodule Mobupay.Services.Twilio do
     # payload =
     #   ~s{Body=#{message}&From=#{twilio_number}&To=#{msisdn}&StatusCallback=https://webhook.site/19151fc9-fd8f-4907-a4db-df81c42729f1}
 
-    payload = ~s{Body=#{message}&From=#{System.get_env("TWILIO_PHONE_NUMBER")}&To=#{msisdn}}
+    payload =
+      ~s{Body=#{message}&From=#{System.get_env("TWILIO_PHONE_NUMBER")}&To=#{msisdn}&StatusCallback=#{System.get_env("TWILIO_WEBHOOK_URL")}}
 
     Logger.info("Twilio: Sending message with payload: #{payload}")
 
-    post_request(__MODULE__, endpoint, payload, headers(), request_options())
+    case post_request(__MODULE__, endpoint, payload, headers(), request_options()) do
+      %{"status" => "queued"} ->
+        {:ok, :sent}
+
+      _ ->
+        {:error, "Unable to send SMS at this time"}
+    end
   end
 
   defp request_options(), do: @request_options

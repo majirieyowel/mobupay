@@ -179,6 +179,7 @@ defmodule MobupayWeb.OnboardController do
       Task.Supervisor.async(Mobupay.TaskSupervisor, fn ->
         message = "#{otp} is your roundup registration code."
         Logger.info(message)
+        #TODO: Handle cases where the OTP is not sent using a process.
         Twilio.send(msisdn, message)
       end)
 
