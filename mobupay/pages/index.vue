@@ -38,6 +38,8 @@ export default {
   name: "home",
   data: () => ({
     currentStep: 0,
+    ip: "",
+    ipinfo: "",
     showHeroSection: true,
     steps: [
       {
@@ -128,11 +130,12 @@ export default {
         firstForm.params.supportedCountries.push(element.country);
       }
       const ip_addr = ipLookup.origin || null;
-      console.log("IP ADDR: ", ip_addr);
+      this.ip = ipLookup;
       if (this.validate_ip(ip_addr)) {
         const ip_info = await this.$axios.$get(
           `https://ipinfo.io/${ip_addr}?token=7afa17ebc35a9d`
         );
+        this.ipinfo = ip_info;
         const { country, city, region } = ip_info;
         firstForm.params.city = city;
         firstForm.params.region = region;
