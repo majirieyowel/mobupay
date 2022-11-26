@@ -115,7 +115,7 @@ export default {
     try {
       const [gettingStarted, ipLookup] = await Promise.all([
         this.$axios.$get("/onboard/getting-started"),
-        this.$axios.$get(process.env.ipURL),
+        this.$axios.$get("https://httpbin.org/ip"),
       ]);
 
       console.log("IP URL: ", process.env.ipURL);
@@ -155,6 +155,7 @@ export default {
       console.log("Catch", error);
     }
   },
+  fetchOnServer: false,
   mounted() {
     console.log("BACKEND URL: ", process.env.BACKEND_URL);
   },
