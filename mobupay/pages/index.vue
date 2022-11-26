@@ -115,9 +115,9 @@ export default {
   },
   async fetch() {
     try {
-      const [gettingStarted, ipLookup] = await Promise.all([
+      const [gettingStarted, ipInfo] = await Promise.all([
         this.$axios.$get("/onboard/getting-started"),
-        this.$axios.$get(process.env.ipURL),
+        this.$axios.$get(process.env.ipInfo),
       ]);
 
       const firstForm = this.steps[0];
@@ -129,27 +129,18 @@ export default {
 
         firstForm.params.supportedCountries.push(element.country);
       }
-      const ip_addr = ipLookup.origin || null;
-      this.ip = ipLookup;
-      if (this.validate_ip(ip_addr)) {
-        const ip_info = await this.$axios.$get(
-          `https://ipinfo.io/${ip_addr}?token=7afa17ebc35a9d`
-        );
-        this.ipinfo = ip_info;
-        const { country, city, region } = ip_info;
-        firstForm.params.city = city;
-        firstForm.params.region = region;
-        let matched_country = gettingStarted.data.filter((item) => {
-          return item.country_code === country;
-        });
 
-        if (matched_country.length > 0) {
-          firstForm.params.country = matched_country[0].country;
-        } else {
-          firstForm.params.country = false;
-        }
+      const {country, city, region } = ipInfo;
+      firstForm.params.city = city;
+      firstForm.params.region = region;
+      let matched_country = gettingStarted.data.filter((item) => {
+        return item.country_code === country;
+      });
+
+      if (matched_country.length > 0) {
+        firstForm.params.country = matched_country[0].country;
       } else {
-        console.log("Invalid IP");
+        firstForm.params.country = false;
       }
     } catch (error) {
       console.log("Catch", error);

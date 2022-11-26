@@ -132,7 +132,7 @@ export default {
   },
 
   env: {
-    ipURL: "https://httpbin.org/ip",
+    ipInfo: "https://ipinfo.io/json?token=7afa17ebc35a9d",
     banksListEndpoint: "https://api.paystack.co/bank",
   },
 
