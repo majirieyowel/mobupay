@@ -11,6 +11,7 @@
           receive money, pay bills and create invoices. Sign up and get started
           today.
         </p>
+        <button @click="logLocation">Log Location</button>
       </div>
     </v-col>
 
@@ -38,8 +39,7 @@ export default {
   name: "home",
   data: () => ({
     currentStep: 0,
-    ip: "",
-    ipinfo: "",
+    serverinfo: "",
     showHeroSection: true,
     steps: [
       {
@@ -69,6 +69,11 @@ export default {
     ],
   }),
   methods: {
+    async logLocation() {
+      let location = await this.$axios.$get(process.env.ipInfo);
+
+      console.log(location);
+    },
     next() {
       this.currentStep++;
     },
@@ -130,7 +135,9 @@ export default {
         firstForm.params.supportedCountries.push(element.country);
       }
 
-      const {country, city, region } = ipInfo;
+      this.serverinfo = ipInfo
+
+      const { country, city, region } = ipInfo;
       firstForm.params.city = city;
       firstForm.params.region = region;
       let matched_country = gettingStarted.data.filter((item) => {
