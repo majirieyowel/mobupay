@@ -16,8 +16,11 @@ defmodule Mobupay.Application do
       {Phoenix.PubSub, name: Mobupay.PubSub},
       # Start the Endpoint (http/https)
       MobupayWeb.Endpoint,
-      {Redix, name: :redix},
-      # {Redix, host: "redis-18910.c84.us-east-1-2.ec2.cloud.redislabs.com:18910", name: :redix},
+      {Redix,
+       host: System.get_env("REDIS_HOST"),
+       port: redis_port(System.get_env("REDIS_PORT")),
+       password: System.get_env("REDIS_PASSWORD"),
+       name: :redix},
       {Task.Supervisor, name: Mobupay.TaskSupervisor}
     ]
 
@@ -34,4 +37,8 @@ defmodule Mobupay.Application do
     MobupayWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  def redis_port(port) when is_bitstring(port), do: String.to_integer(port)
+
+  def redis_port(port) when is_integer(port), do: port
 end

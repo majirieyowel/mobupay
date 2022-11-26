@@ -13,8 +13,8 @@
             v-model="form.country"
             ref="country"
             :items="params.supportedCountries"
-            item-text="label"
-            item-value="ref"
+            item-text="country"
+            item-value="country"
             persistent-hint
             label="Country"
             :rules="rules.country"
@@ -72,10 +72,6 @@ export default {
   }),
   props: {
     params: {
-      msisdn: String,
-      country: String,
-      city: String,
-      region: String,
       supportedCountries: Array,
     },
   },
@@ -119,25 +115,34 @@ export default {
       }
     },
     setup() {
-      // assign props
-      this.form.msisdn = this.params.msisdn;
-      this.form.city = this.params.city;
-      this.form.region = this.params.region;
-      if (this.params.country) {
-        this.form.country = this.params.country;
-      } else {
-        this.supported = false;
-      }
-
       // Grab msisdn from query params if exist
       let query = this.$route.query;
       if (query.p) {
         this.form.msisdn = query.p;
       }
     },
+    async fetchIpInfo() {
+      let ipInfo = await this.$axios.$get(process.env.ipInfo);
+
+      const { country, city, region } = ipInfo;
+      this.form.city = city;
+      this.form.region = region;
+
+      let country_code_only = this.params.supportedCountries.filter((item) => {
+        return item.country_code == country;
+      });
+
+      if (country_code_only.length > 0) {
+        this.form.country = country_code_only[0].country;
+      } else {
+        this.supported = false;
+      }
+    },
   },
+
   mounted() {
     this.setup();
+    this.fetchIpInfo();
   },
 };
 </script>

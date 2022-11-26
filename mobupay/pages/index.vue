@@ -43,10 +43,6 @@ export default {
       {
         component: "CreateUser",
         params: {
-          msisdn: "",
-          country: "",
-          city: "",
-          region: "",
           supportedCountries: [],
         },
       },
@@ -100,59 +96,18 @@ export default {
         params: { dashboard: msisdn },
       });
     },
-    validate_ip(ipaddress) {
-      if (
-        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-          ipaddress
-        )
-      ) {
-        return true;
-      }
-      return false;
-    },
   },
   async fetch() {
     try {
-      const [gettingStarted, ipLookup] = await Promise.all([
-        this.$axios.$get("/onboard/getting-started"),
-        this.$axios.$get(process.env.ipURL),
-      ]);
+      let gettingStarted = await this.$axios.$get("/onboard/getting-started");
 
       const firstForm = this.steps[0];
 
-      const supportedCountries = gettingStarted.data;
-
-      for (let i = 0; i < supportedCountries.length; i++) {
-        const element = supportedCountries[i];
-
-        firstForm.params.supportedCountries.push(element.country);
-      }
-      const ip_addr = ipLookup.origin || null;
-      if (this.validate_ip(ip_addr)) {
-        const ip_info = await this.$axios.$get(
-          `https://ipinfo.io/${ip_addr}?token=7afa17ebc35a9d`
-        );
-        const { country, city, region } = ip_info;
-        firstForm.params.city = city;
-        firstForm.params.region = region;
-        let matched_country = gettingStarted.data.filter((item) => {
-          return item.country_code === country;
-        });
-
-        if (matched_country.length > 0) {
-          firstForm.params.country = matched_country[0].country;
-        } else {
-          firstForm.params.country = false;
-        }
-      } else {
-        console.log("Invalid IP");
-      }
+      firstForm.params.supportedCountries = gettingStarted.data;
     } catch (error) {
+      //TODO: This is a very important error that should be handled
       console.log("Catch", error);
     }
-  },
-  mounted() {
-    console.log(process.env.BACKEND_URL);
   },
 };
 </script>

@@ -1,6 +1,12 @@
 import colors from "vuetify/es5/util/colors";
 
 export default {
+  vue: {
+    config: {
+      productionTip: true,
+      devtools: true
+    }
+  },
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     titleTemplate: "%s - mobupay",
@@ -126,7 +132,7 @@ export default {
   },
 
   env: {
-    ipURL: "https://httpbin.org/ip",
+    ipInfo: "https://ipinfo.io/json?token=7afa17ebc35a9d",
     banksListEndpoint: "https://api.paystack.co/bank",
   },
 
