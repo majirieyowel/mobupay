@@ -11,7 +11,6 @@
           receive money, pay bills and create invoices. Sign up and get started
           today.
         </p>
-        <button @click="logLocation">Log Location</button>
       </div>
     </v-col>
 
@@ -39,16 +38,11 @@ export default {
   name: "home",
   data: () => ({
     currentStep: 0,
-    serverinfo: "",
     showHeroSection: true,
     steps: [
       {
         component: "CreateUser",
         params: {
-          msisdn: "",
-          country: "",
-          city: "",
-          region: "",
           supportedCountries: [],
         },
       },
@@ -69,11 +63,6 @@ export default {
     ],
   }),
   methods: {
-    async logLocation() {
-      let location = await this.$axios.$get(process.env.ipInfo);
-
-      console.log(location);
-    },
     next() {
       this.currentStep++;
     },
@@ -107,54 +96,18 @@ export default {
         params: { dashboard: msisdn },
       });
     },
-    validate_ip(ipaddress) {
-      if (
-        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-          ipaddress
-        )
-      ) {
-        return true;
-      }
-      return false;
-    },
   },
   async fetch() {
     try {
-      const [gettingStarted, ipInfo] = await Promise.all([
-        this.$axios.$get("/onboard/getting-started"),
-        this.$axios.$get(process.env.ipInfo),
-      ]);
+      let gettingStarted = await this.$axios.$get("/onboard/getting-started");
 
       const firstForm = this.steps[0];
 
-      const supportedCountries = gettingStarted.data;
-
-      for (let i = 0; i < supportedCountries.length; i++) {
-        const element = supportedCountries[i];
-
-        firstForm.params.supportedCountries.push(element.country);
-      }
-
-      this.serverinfo = ipInfo
-
-      const { country, city, region } = ipInfo;
-      firstForm.params.city = city;
-      firstForm.params.region = region;
-      let matched_country = gettingStarted.data.filter((item) => {
-        return item.country_code === country;
-      });
-
-      if (matched_country.length > 0) {
-        firstForm.params.country = matched_country[0].country;
-      } else {
-        firstForm.params.country = false;
-      }
+      firstForm.params.supportedCountries = gettingStarted.data;
     } catch (error) {
+      //TODO: This is a very important error that should be handled
       console.log("Catch", error);
     }
-  },
-  mounted() {
-    console.log("BACKEND URL: ", process.env.BACKEND_URL);
   },
 };
 </script>
