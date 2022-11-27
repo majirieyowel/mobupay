@@ -180,7 +180,7 @@ defmodule MobupayWeb.OnboardController do
         message = "#{otp} is your roundup registration code."
         Logger.info(message)
         #TODO: Handle cases where the OTP is not sent using a process.
-        Twilio.send(msisdn, message)
+        # Twilio.send(msisdn, message)
       end)
 
       {:ok, otp}

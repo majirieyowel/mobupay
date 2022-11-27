@@ -2,7 +2,7 @@
   <v-app id="inspire">
     <v-navigation-drawer v-model="drawer" mobile-breakpoint="600" app>
       <v-system-bar color="orange" class="px-0 justify-center">
-        Beta
+        {{ $config.version }}
       </v-system-bar>
       <v-container fluid>
         <v-row>
@@ -245,7 +245,7 @@
         </v-breadcrumbs>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <div class="balance" v-if="showHeaderBalance">
+      <div class="balance" v-if="displayHeaderBalance">
         <div class="account">
           <span>
             {{ $auth.$state.user.currency }}
@@ -314,12 +314,11 @@ import { mapGetters } from "vuex";
 
 export default {
   name: "DashboardLayout",
-  computed: mapGetters(["breadcrumbs", "sendDialog"]),
+  computed: mapGetters(["breadcrumbs", "sendDialog", "displayHeaderBalance"]),
   data() {
     return {
       drawer: true,
       list: true,
-      showHeaderBalance: true,
     };
   },
   methods: {
@@ -339,7 +338,6 @@ export default {
       this.drawer = false;
     }
   },
-  mounted() {},
 };
 </script>
 

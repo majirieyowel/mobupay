@@ -1,4 +1,5 @@
 export default () => ({
+  displayHeaderBalance: false,
   onboarding: {
     _hash: "",
   },

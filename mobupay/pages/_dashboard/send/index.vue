@@ -130,9 +130,12 @@
             <div v-if="step == 'success'">
               <div v-if="!verifiedTranxResp.metadata.receiver_registered">
                 <v-alert outlined color="orange" border="left" text>
-                  You've sent money to
+                  You've sent <b>{{ $auth.$state.user.currency
+                        }}{{
+                          verifiedTranxResp.transaction.amount | format_money
+                        }}</b> to
                   <b>{{ verifiedTranxResp.transaction.to_msisdn }}</b> which is
-                  not registered with Mobupay. We will attempt to notify them to
+                  <b>NOT</b> registered with Mobupay. We will attempt to notify them to
                   signup and claim their money.
                 </v-alert>
               </div>

@@ -70,4 +70,7 @@ export default {
   setSendDialog(state, status) {
     state.sendDialog = status;
   },
+  setDisplayHeaderBalance(state, status) {
+    state.displayHeaderBalance = status;
+  },
 };

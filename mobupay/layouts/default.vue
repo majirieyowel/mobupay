@@ -2,7 +2,7 @@
   <v-app class="__app">
     <v-container fluid class="pa-0">
       <v-system-bar color="orange" class="px-0 justify-center">
-        Beta
+        {{ $config.version }}
       </v-system-bar>
 
       <!-- header -->
@@ -38,11 +38,13 @@
                 </NuxtLink>
               </div>
               <div v-else>
-                <NuxtLink
-                  class="grey--text text-5 text-decoration-none"
-                  to="/login"
-                  >Login</NuxtLink
-                >
+                <template v-if="show_login_link">
+                  <NuxtLink
+                    class="grey--text text-5 text-decoration-none"
+                    to="/login"
+                    >Login</NuxtLink
+                  >
+                </template>
               </div>
               <!--
               
@@ -77,6 +79,14 @@
 <script>
 export default {
   name: "DefaultLayout",
+  data: () => ({
+    show_login_link: false,
+  }),
+  mounted() {
+    if (this.$route.name !== "login") {
+      this.show_login_link = true;
+    }
+  },
 };
 </script>
 

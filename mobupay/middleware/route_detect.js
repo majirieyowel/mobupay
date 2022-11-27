@@ -1,4 +1,12 @@
 export default function ({ store, route }) {
+
+  if (route.name == "dashboard") {
+    store.commit('setDisplayHeaderBalance', false)
+  } else {
+    store.commit('setDisplayHeaderBalance', true)
+  }
+
+  // set breadcrumbs
   if (route.params && route.params.dashboard) {
     let { dashboard } = { ...route.params };
     if (Object.keys(route.meta[0]).length !== 0) {
