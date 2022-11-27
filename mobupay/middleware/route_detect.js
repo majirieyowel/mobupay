@@ -1,5 +1,13 @@
 export default function ({ store, route }) {
 
+  // sets if to display login link in auth header
+  if (route.name == "login") {
+    store.commit('setDisplayHeaderLogin', false)
+  } else {
+    store.commit('setDisplayHeaderLogin', true)
+  }
+
+  // sets if to display balance in header
   if (route.name == "dashboard") {
     store.commit('setDisplayHeaderBalance', false)
   } else {

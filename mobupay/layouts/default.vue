@@ -38,7 +38,7 @@
                 </NuxtLink>
               </div>
               <div v-else>
-                <template v-if="show_login_link">
+                <template v-if="displayHeaderLogin">
                   <NuxtLink
                     class="grey--text text-5 text-decoration-none"
                     to="/login"
@@ -77,16 +77,13 @@
 </template>
 
 <script>
+import { mapGetters } from "vuex";
 export default {
   name: "DefaultLayout",
   data: () => ({
     show_login_link: false,
   }),
-  mounted() {
-    if (this.$route.name !== "login") {
-      this.show_login_link = true;
-    }
-  },
+  computed: mapGetters(["displayHeaderLogin"]),
 };
 </script>
 

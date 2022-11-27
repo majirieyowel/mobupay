@@ -73,4 +73,7 @@ export default {
   setDisplayHeaderBalance(state, status) {
     state.displayHeaderBalance = status;
   },
+  setDisplayHeaderLogin(state, status) {
+    state.displayHeaderLogin = status;
+  },
 };

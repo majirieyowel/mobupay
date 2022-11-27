@@ -20,4 +20,7 @@ export default {
   displayHeaderBalance(state) {
     return state.displayHeaderBalance;
   },
+  displayHeaderLogin(state) {
+    return state.displayHeaderLogin;
+  },
 };
