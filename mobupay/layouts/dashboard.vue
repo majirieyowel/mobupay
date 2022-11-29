@@ -219,13 +219,7 @@
 
       <template v-slot:append>
         <div class="pa-2">
-          <v-btn
-            style="margin-bottom: 30px"
-            tile
-            block
-            elevation="0"
-            @click="$auth.logout()"
-          >
+          <v-btn tile block elevation="0" @click="$auth.logout()">
             Logout
           </v-btn>
         </div>

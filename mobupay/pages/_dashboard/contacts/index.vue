@@ -42,7 +42,7 @@
                       :to="{
                         name: 'dashboard-send',
                         params: { dashboard: $auth.$state.user.msisdn },
-                        query: { contact: 2348108125272 },
+                        query: { contact: contact.msisdn },
                       }"
                     >
                       <v-list-item>

@@ -14,9 +14,9 @@ Number.prototype.formatMoney = function (c, d, t) {
     i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) +
     (c
       ? d +
-        Math.abs(n - i)
-          .toFixed(c)
-          .slice(2)
+      Math.abs(n - i)
+        .toFixed(c)
+        .slice(2)
       : "")
   );
 };
@@ -36,8 +36,8 @@ function moneyFormat(num, currency = "") {
 }
 
 export default () => {
-  Vue.filter("format_money", function (value) {
-    value = value / 100;
+  Vue.filter("format_money", function (value, divide = true) {
+    value = divide ? value / 100 : value
     return moneyFormat(value);
   });
 };

@@ -32,9 +32,11 @@ a {
   justify-content: center;
   align-items: center;
 }
-
 .v-messages__message {
   color: #fb8c00;
+}
+.error--text .v-messages__message {
+  color: #ff5252;
 }
 
 .v-dialog > .v-card > .v-card__text {

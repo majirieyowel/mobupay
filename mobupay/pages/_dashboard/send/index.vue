@@ -20,7 +20,7 @@
                 <v-row align="center">
                   <v-col class="" cols="12">
                     <v-tabs
-                      @change="form.to_msisdn = ''"
+                      @change="switchingTabs"
                       active-class="send--tab--active"
                       v-model="tab"
                       :centered="tabCentered"
@@ -35,24 +35,23 @@
                       <v-tab-item>
                         <v-text-field
                           v-model="form.to_msisdn"
-                          autofocus
-                          label=""
                           hint="International format e.g 2348108125270"
                           persistent-hint
                           type="number"
                           clearable
+                          :error-messages="to_msisdnErrors"
                         >
                         </v-text-field>
                       </v-tab-item>
                       <v-tab-item>
                         <v-autocomplete
-                          v-model="form.to_msisdn"
+                          v-model="form.to_msisdn_contact"
                           :items="contacts"
                           item-text="name"
                           item-value="msisdn"
-                          label=""
                           :loading="isLoadingContacts"
                           clearable
+                          :error-messages="to_msisdnErrorsContact"
                         ></v-autocomplete
                       ></v-tab-item>
                     </v-tabs-items>
@@ -64,7 +63,9 @@
                     <v-text-field
                       v-model="form.amount"
                       label="Amount"
-                      type="number"
+                      :error-messages="amountErrors"
+                      @input="amountOnInput"
+                      @blur="$v.form.amount.$touch()"
                     >
                     </v-text-field>
                   </v-col>
@@ -130,13 +131,16 @@
             <div v-if="step == 'success'">
               <div v-if="!verifiedTranxResp.metadata.receiver_registered">
                 <v-alert outlined color="orange" border="left" text>
-                  You've sent <b>{{ $auth.$state.user.currency
-                        }}{{
-                          verifiedTranxResp.transaction.amount | format_money
-                        }}</b> to
-                  <b>{{ verifiedTranxResp.transaction.to_msisdn }}</b> which is
-                  <b>NOT</b> registered with Mobupay. We will attempt to notify them to
-                  signup and claim their money.
+                  You've sent
+                  <b
+                    >{{ $auth.$state.user.currency
+                    }}{{
+                      verifiedTranxResp.transaction.amount | format_money
+                    }}</b
+                  >
+                  to <b>{{ verifiedTranxResp.transaction.to_msisdn }}</b> which
+                  is <b>NOT</b> registered with Mobupay. We will attempt to
+                  notify them to signup and claim their money.
                 </v-alert>
               </div>
               <div class="transfer-success">
@@ -217,7 +221,6 @@
                     <v-row align="center">
                       <v-col class="d-flex mx-auto email-padding" cols="12">
                         <v-text-field
-                          autofocus
                           placeholder="john.doe@gmail.com"
                           v-model="email_form.email"
                           label="Email Address"
@@ -262,6 +265,13 @@ import { mapGetters } from "vuex";
 import VerifyPassword from "../../../components/VerifyPassword.vue";
 import Confirm from "../../../components/Confirm.vue";
 import errorCatch from "../../../functions/catchError";
+import { validationMixin } from "vuelidate";
+import { required, helpers } from "vuelidate/lib/validators";
+
+const currencyRegex =
+  /^\$?\-?([1-9]{1}[0-9]{0,2}(\,\d{3})*(\.\d{0,2})?|[1-9]{1}\d{0,}(\.\d{0,2})?|0(\.\d{0,2})?|(\.\d{1,2}))$|^\-?\$?([1-9]{1}\d{0,2}(\,\d{3})*(\.\d{0,2})?|[1-9]{1}\d{0,}(\.\d{0,2})?|0(\.\d{0,2})?|(\.\d{1,2}))$|^\(\$?([1-9]{1}\d{0,2}(\,\d{3})*(\.\d{0,2})?|[1-9]{1}\d{0,}(\.\d{0,2})?|0(\.\d{0,2})?|(\.\d{1,2}))\)$/;
+const mustBeCurrency = (value) =>
+  !helpers.req(value) || currencyRegex.test(value);
 
 export default {
   middleware: ["auth", "verify_url_msisdn"],
@@ -270,11 +280,51 @@ export default {
   head: {
     script: [{ src: "https://js.paystack.co/v2/inline.js" }],
   },
-  computed: mapGetters(["cards"]),
+  mixins: [validationMixin],
+  validations: {
+    form: {
+      amount: { required, mustBeCurrency },
+      to_msisdn: { required },
+      to_msisdn_contact: { required },
+    },
+  },
+  computed: {
+    amountErrors() {
+      const errors = [];
+      if (!this.$v.form.amount.$dirty) return errors;
+      //false and push error message
+      !this.$v.form.amount.required && errors.push("Amount is required");
+      !this.$v.form.amount.mustBeCurrency &&
+        errors.push("Invalid amount format");
+      return errors;
+    },
+    to_msisdnErrors() {
+      const errors = [];
+      if (!this.$v.form.to_msisdn.$dirty) return errors;
+      if (this.tab == 0) {
+        !this.$v.form.to_msisdn.required &&
+          errors.push("Phone number is required.");
+      }
+
+      return errors;
+    },
+    to_msisdnErrorsContact() {
+      const errors = [];
+      if (!this.$v.form.to_msisdn_contact.$dirty) return errors;
+      if (this.tab == 1) {
+        !this.$v.form.to_msisdn_contact.required &&
+          errors.push("Please select a contact");
+      }
+      return errors;
+    },
+
+    ...mapGetters(["cards"]),
+  },
   data() {
     const defaultForm = Object.freeze({
       card: "",
       to_msisdn: "",
+      to_msisdn_contact: "",
       amount: "",
       narration: "",
       ip_address: "",
@@ -332,7 +382,43 @@ export default {
     },
   },
   methods: {
+    switchingTabs() {
+      this.form.to_msisdn = "";
+      this.form.to_msisdn_contact = "";
+    },
+    amountOnInput() {
+      let raw_amount = this.form.amount;
+
+      let removed_commas = raw_amount.replaceAll(",", "");
+
+      if (currencyRegex.test(removed_commas)) {
+        let num = parseFloat(removed_commas);
+
+        this.form.amount = num.toLocaleString("en-US");
+      }
+
+      this.$v.form.amount.$touch();
+    },
     async prePaymentCheck() {
+      /**
+       * So i'm kinda having some challenges validating to_msisdn and contact_msisdn
+       * I'm trying to make sure that is to_msisdn is selected, contact_msisdn will
+       * be ignored and vice-versa. This hack should suffice.
+       */
+
+      if (this.tab == 0) {
+        // to msisdn is selected so preload contact
+        if (this.form.to_msisdn_contact == "")
+          this.form.to_msisdn_contact = "00000";
+      } else {
+        // contact is selected so preload to_msisdn
+        if (this.form.to_msisdn == "") this.form.to_msisdn = "00000";
+      }
+
+      this.$v.$touch();
+
+      if (this.$v.$invalid) return;
+
       if (
         this.form.funding_channel == "Existing Card" &&
         this.cards.length > 0
@@ -357,7 +443,10 @@ export default {
       this.form.ip_address = ip.ip;
       this.form.device = window.navigator.userAgent;
       try {
-        const response = await this.$axios.$post("/transfer", this.form);
+        const response = await this.$axios.$post(
+          "/transfer",
+          this.resolve_to_msisdn(this.form)
+        );
         switch (response.data.payment_status) {
           case "INCOMPLETE":
             this.handleIncompletePayment(response.data);
@@ -391,6 +480,16 @@ export default {
       } finally {
         this.submittingEmail = false;
       }
+    },
+    resolve_to_msisdn(data) {
+      let msisdn =
+        data.to_msisdn == "00000" ? data.to_msisdn_contact : data.to_msisdn;
+
+      delete data.to_msisdn_contact;
+
+      data.to_msisdn = msisdn;
+
+      return data;
     },
     handleCompletePayment(data) {
       this.step = "success";
@@ -497,9 +596,8 @@ export default {
       let query = this.$route.query;
       if (query.contact) {
         this.tab = 1;
-        this.form.to_msisdn = query.contact;
+        this.form.to_msisdn_contact = query.contact;
       }
-      console.log(query);
     },
     resetPayment() {
       this.step = "fund";
@@ -527,6 +625,12 @@ export default {
   mounted() {
     this.setupCards();
     this.setupPaymentChannels();
+
+    // setTimeout(() => {
+    //   console.log("setting value for contat");
+
+    //   this.form.to_msisdn_contact = "0820828328323";
+    // }, 3000);
   },
 };
 </script>
