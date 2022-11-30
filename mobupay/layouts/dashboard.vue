@@ -253,7 +253,7 @@
           </span>
         </div>
         <div class="book">
-          <span>Book Balance:</span>
+          <span>Book Bal:</span>
           <span>
             {{ $auth.$state.user.currency }}
             {{ $auth.$state.user.book_balance | format_money }}

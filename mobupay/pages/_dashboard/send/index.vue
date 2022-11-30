@@ -445,7 +445,7 @@ export default {
       try {
         const response = await this.$axios.$post(
           "/transfer",
-          this.resolve_to_msisdn(this.form)
+          this.prepare_payload(this.form)
         );
         switch (response.data.payment_status) {
           case "INCOMPLETE":
@@ -481,13 +481,16 @@ export default {
         this.submittingEmail = false;
       }
     },
-    resolve_to_msisdn(data) {
+    prepare_payload(form_data) {
+      let data = Object.assign({}, form_data);
       let msisdn =
         data.to_msisdn == "00000" ? data.to_msisdn_contact : data.to_msisdn;
 
       delete data.to_msisdn_contact;
 
       data.to_msisdn = msisdn;
+
+      data.amount = data.amount.replaceAll(",", "");
 
       return data;
     },
