@@ -14,6 +14,13 @@
           type="number"
         ></v-otp-input>
 
+        <div class="resend-otp">
+          <span v-if="!showResendLink" class="wait"
+            >Resend OTP in {{ counter }}</span
+          >
+          <span v-else class="resend">Resend</span>
+        </div>
+
         <v-btn
           :disabled="!isActive"
           :loading="loading"
@@ -39,12 +46,15 @@ export default {
   name: "verify_otp",
   emits: ["submitted", "mobile"],
   data: () => ({
-    length: 4,
+    length: 5,
+    counter: 50,
+    showResendLink: false,
     loading: false,
     form: {
       msisdn: "",
       otp: "",
     },
+    otpInterval: null,
   }),
   computed: {
     isActive() {
@@ -74,9 +84,19 @@ export default {
         this.loading = false;
       }
     },
+    startCountDown() {
+      this.otpInterval = setInterval(() => {
+        this.counter = --this.counter;
+        if (this.counter == 0) {
+          clearInterval(this.otpInterval);
+          this.showResendLink = true;
+        }
+      }, 1000);
+    },
   },
   mounted() {
     this.form.msisdn = this.params.msisdn;
+    this.startCountDown();
 
     if (screen.width < 600) {
       this.$emit("mobile");
