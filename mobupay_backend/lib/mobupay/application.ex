@@ -16,11 +16,12 @@ defmodule Mobupay.Application do
       {Phoenix.PubSub, name: Mobupay.PubSub},
       # Start the Endpoint (http/https)
       MobupayWeb.Endpoint,
-      {Redix,
-       host: System.get_env("REDIS_HOST"),
-       port: redis_port(System.get_env("REDIS_PORT")),
-       password: System.get_env("REDIS_PASSWORD"),
-       name: :redix},
+      # {Redix,
+      #  host: System.get_env("REDIS_HOST"),
+      #  port: redis_port(System.get_env("REDIS_PORT")),
+      #  password: System.get_env("REDIS_PASSWORD"),
+      #  name: :redix},
+      # {Redix, name: :redix},
       {Task.Supervisor, name: Mobupay.TaskSupervisor}
     ]
 

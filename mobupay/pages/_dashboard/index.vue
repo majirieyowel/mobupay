@@ -17,17 +17,9 @@
                 Book Balance:
                 {{ $auth.$state.user.book_balance | format_money }}</span
               >
-              <!--
-                <v-icon class="help-icon">mdi-help-circle-outline</v-icon>
-              -->
             </span>
           </div>
           <div class="transact">
-            <v-btn color="blue-grey" small class="white--text">
-              Withdraw
-              <v-icon right> mdi-cash-plus </v-icon>
-            </v-btn>
-
             <v-btn
               @click="$store.commit('setSendDialog', true)"
               color="#36b26c"
@@ -43,7 +35,7 @@
     </v-row>
     <v-row>
       <v-col cols="12" class="pa-0 transaction">
-        <v-card elevation="2">
+        <v-card elevation="2" style="padding-bottom: 52px">
           <v-card-title
             >Transactions
             <span @click="refreshTransactions" class="refresh-transaction">
@@ -54,26 +46,30 @@
             <template v-slot:default>
               <thead>
                 <tr>
-                  <th class="text-left">Type</th>
+                  <!--
+                    <th class="text-left">Type</th>
+                  -->
                   <th class="text-left">Status</th>
                   <th class="text-left">Sender</th>
                   <th class="text-left">Receiver</th>
                   <th class="text-left">Amount</th>
 
-                  <th class="text-left">Reference</th>
                   <th class="text-left">Date&nbsp;Created</th>
                   <th class="text-left table--action">Action</th>
                 </tr>
               </thead>
               <tbody v-if="transactions.length">
                 <tr v-for="item in transactions" :key="item.ref">
-                  <td>
+                  <!-- 
+                          <td>
                     {{
                       $auth.$state.user.msisdn == item.to_msisdn
                         ? "credit"
                         : "debit"
                     }}
                   </td>
+                  -->
+
                   <td>
                     {{ item.status }}
                     <v-icon
@@ -114,13 +110,6 @@
                     </td>
                   -->
 
-                  <td>
-                    {{
-                      $auth.$state.user.msisdn == item.from_msisdn
-                        ? item.from_ref
-                        : item.to_ref
-                    }}
-                  </td>
                   <td>{{ $moment(item.inserted_at).calendar() }}</td>
                   <td>
                     <v-btn

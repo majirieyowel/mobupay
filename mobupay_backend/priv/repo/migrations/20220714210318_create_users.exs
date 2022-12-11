@@ -4,6 +4,8 @@ defmodule Mobupay.Repo.Migrations.CreateUsers do
   def change do
     create table(:users) do
       add :email, :string
+      add :email_confirmation_token, :utc_datetime
+      add :email_confirmed_at, :utc_datetime
       add :msisdn, :string, null: false
       add :country, :string, null: false
       add :currency, :string, null: false

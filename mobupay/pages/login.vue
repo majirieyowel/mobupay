@@ -4,59 +4,64 @@
       <v-col cols="12" md="5" class="login-card ma-0 mx-auto">
         <h2 class="pl-3 pl-sm-14 title">Login</h2>
 
-        <v-container fluid class="px-3 px-sm-14 login-body">
-          <v-row>
-            <v-col>
-              <v-row align="center">
-                <v-col>
-                  <v-text-field
-                    v-model="form.msisdn"
-                    label="Mobile number"
-                    hide-details="auto"
-                    :rules="rules.msisdn"
-                    hint="International format e.g 2348108125270"
-                    persistent-hint
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
+        <v-form @keyup.native.enter="pre_validate">
+          <v-container fluid class="px-3 px-sm-14 login-body">
+            <v-row>
+              <v-col>
+                <v-row align="center">
+                  <v-col>
+                    <v-text-field
+                      ref="msisdn"
+                      clearable
+                      v-model="form.msisdn"
+                      label="Mobile number"
+                      hide-details="auto"
+                      :rules="rules.msisdn"
+                      hint="International format e.g 2348108125270"
+                      persistent-hint
+                    >
+                    </v-text-field>
+                  </v-col>
+                </v-row>
 
-              <v-row>
-                <v-col>
-                  <v-text-field
-                    v-model="form.password"
-                    :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                    label="Password"
-                    hide-details="auto"
-                    :type="showPassword ? 'text' : 'password'"
-                    :rules="rules.password"
-                    @click:append="showPassword = !showPassword"
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
+                <v-row>
+                  <v-col>
+                    <v-text-field
+                      ref="password"
+                      v-model="form.password"
+                      :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                      label="Password"
+                      hide-details="auto"
+                      :type="showPassword ? 'text' : 'password'"
+                      :rules="rules.password"
+                      @click:append="showPassword = !showPassword"
+                    >
+                    </v-text-field>
+                  </v-col>
+                </v-row>
 
-              <v-row>
-                <v-col cols="12" md="6" class="text-center mt-4 mx-auto">
-                  <v-btn
-                    block
-                    @click="login"
-                    :loading="submitting"
-                    class="button"
-                    color="#0052ff"
-                    tile
-                    >Login</v-btn
-                  >
-                </v-col>
-                <v-col cols="12" class="text-center">
-                  <p class="text-4 forgot-password" @click="forgotPassword">
-                    Forgot Password?
-                  </p>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
-        </v-container>
+                <v-row>
+                  <v-col cols="12" md="6" class="text-center mt-4 mx-auto">
+                    <v-btn
+                      block
+                      @click="pre_validate"
+                      :loading="submitting"
+                      class="button"
+                      color="#0052ff"
+                      tile
+                      >Login</v-btn
+                    >
+                  </v-col>
+                  <v-col cols="12" class="text-center">
+                    <p class="text-4 forgot-password" @click="forgotPassword">
+                      Forgot Password?
+                    </p>
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-form>
       </v-col>
     </v-row>
   </v-container>
@@ -71,6 +76,7 @@ export default {
   data: () => ({
     submitting: false,
     showPassword: false,
+    formHasErrors: false,
     form: {
       msisdn: "2348108125270",
       password: "@Nelie&e12",
@@ -80,9 +86,29 @@ export default {
       password: [(v) => (v || "").length > 0 || "Input your password"],
     },
   }),
+  computed: {
+    form_cast() {
+      return {
+        msisdn: this.form.msisdn,
+        password: this.form.password,
+      };
+    },
+  },
 
   methods: {
+    async pre_validate() {
+      this.formHasErrors = false;
+
+      Object.keys(this.form_cast).forEach((f) => {
+        if (!this.form_cast[f]) this.formHasErrors = true;
+
+        this.$refs[f].validate(true);
+      });
+
+      if (!this.formHasErrors) await this.login();
+    },
     async login() {
+      this.formHasErrors = false;
       this.submitting = true;
       try {
         await this.$auth.loginWith("local", {

@@ -14,6 +14,14 @@ defmodule MobupayWeb.Router do
     get("/", PageController, :index)
   end
 
+  scope "/api/v1", MobupayWhatsapp, as: :v1 do
+    pipe_through(:api)
+    
+    post("/incoming/e0dd36d8-3232-45f8-8af2-647215ddee5c", Entrypoint, :index)
+    post("/verify-whatsapp-email", Entrypoint, :verify_email)
+    post("/callback", Callback, :index)
+  end
+
   scope "/api/v1", MobupayWeb, as: :v1 do
     pipe_through(:api)
 
@@ -36,8 +44,10 @@ defmodule MobupayWeb.Router do
 
     # transactions
     get("/transaction", TransactionController, :transactions)
-    post("/transaction/send/self/initiate", TransactionController, :self_initiate)
-    post("/transaction/send/self/verify", TransactionController, :verify_transaction)
+
+    # Self funding
+    post("/self-fund", SelfFundController, :index)
+    post("/self-fund/verify", SelfFundController, :verify)
 
     # Transfer
     post("/transfer", TransferController, :index)

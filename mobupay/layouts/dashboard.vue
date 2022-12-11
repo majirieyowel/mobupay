@@ -2,7 +2,7 @@
   <v-app id="inspire">
     <v-navigation-drawer v-model="drawer" mobile-breakpoint="600" app>
       <v-system-bar color="orange" class="px-0 justify-center">
-        Beta
+        {{ $config.version }}
       </v-system-bar>
       <v-container fluid>
         <v-row>
@@ -245,7 +245,7 @@
         </v-breadcrumbs>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <div class="balance" v-if="showHeaderBalance">
+      <div class="balance" v-if="displayHeaderBalance">
         <div class="account">
           <span>
             {{ $auth.$state.user.currency }}
@@ -253,7 +253,7 @@
           </span>
         </div>
         <div class="book">
-          <span>Book Balance:</span>
+          <span>Book Bal:</span>
           <span>
             {{ $auth.$state.user.currency }}
             {{ $auth.$state.user.book_balance | format_money }}
@@ -305,6 +305,35 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <v-dialog
+        v-model="warningTimerDialog"
+        persistent
+        width="500"
+        content-class="auto-logout-dialog"
+      >
+        <v-card>
+          <v-card-title class="text-h5 grey lighten-2">
+            Are you there?
+          </v-card-title>
+
+          <v-card-text>
+            No activity has been detected for 10mins.
+            <br />
+            You will be logged out in <b>{{ logoutCountDown }}</b>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions>
+            <v-btn color="error" text @click="$auth.logout()"> Logout </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="staySignedIn">
+              Stay signed in
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-main>
   </v-app>
 </template>
@@ -314,14 +343,19 @@ import { mapGetters } from "vuex";
 
 export default {
   name: "DashboardLayout",
-  computed: mapGetters(["breadcrumbs", "sendDialog"]),
   data() {
     return {
       drawer: true,
       list: true,
-      showHeaderBalance: true,
+      events: ["click", "mousemove", "mousedown", "scroll", "keypress"],
+      warningTimer: null,
+      countdownToLogoutInterval: null,
+      warningTimerDialog: false,
+      warningTime: 600 * 1000, // 10minutes
+      logoutCountDown: "",
     };
   },
+  computed: mapGetters(["breadcrumbs", "sendDialog", "displayHeaderBalance"]),
   methods: {
     displayOptionsDialog(e) {
       this.$store.commit("setSendDialog", true);
@@ -333,13 +367,78 @@ export default {
         params: { dashboard: this.$auth.$state.user.msisdn },
       });
     },
+    staySignedIn() {
+      this.warningTimerDialog = false;
+
+      this.resetTimer();
+    },
+    setTimers() {
+      this.warningTimer = setTimeout(this.warningMessage, this.warningTime);
+    },
+    warningMessage() {
+      this.warningTimerDialog = true;
+
+      this.logoutCountDown = "00:30";
+
+      this.countdownToLogoutInterval = setInterval(() => {
+        this.countdownToLogout();
+      }, 1000);
+    },
+    countdownToLogout() {
+      let time = this.logoutCountDown.split(":");
+
+      let mins = time[0];
+      let secs = time[1];
+
+      let new_min = "";
+      let new_sec = "";
+
+      if (mins == "00" && secs == "01") {
+        clearInterval(this.countdownToLogoutInterval);
+        this.$auth.logout();
+        return;
+      }
+
+      if (secs == "01") {
+        new_min = mins == "00" ? "00" : parseInt(mins - 1);
+        new_sec = "59";
+      } else {
+        new_sec = secs == "00" ? "59" : parseInt(secs) - 1;
+        new_min = mins;
+      }
+
+      this.logoutCountDown = `${this.pad(new_min)}:${this.pad(new_sec)}`;
+    },
+    pad(value) {
+      return value.toString().length == 1 ? "0" + value : value;
+    },
+
+    clearTimers() {
+      clearTimeout(this.warningTimer);
+      clearInterval(this.countdownToLogoutInterval);
+    },
+    resetTimer() {
+      if (!this.warningTimerDialog) {
+        this.clearTimers();
+        this.setTimers();
+      }
+    },
   },
   beforeMount() {
     if (screen.width < 600) {
       this.drawer = false;
     }
   },
-  mounted() {},
+  mounted() {
+    this.events.forEach((event) => {
+      window.addEventListener(event, this.resetTimer);
+    });
+
+    this.setTimers();
+  },
+  beforeUnmount() {
+    this.clearTimers();
+  },
 };
 </script>
 
@@ -429,6 +528,12 @@ export default {
   }
 
   .v-card {
+    padding: 20px;
+  }
+}
+
+.auto-logout-dialog {
+  .v-card__text {
     padding: 20px;
   }
 }

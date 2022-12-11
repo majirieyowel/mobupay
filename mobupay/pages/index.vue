@@ -42,9 +42,7 @@ export default {
     steps: [
       {
         component: "CreateUser",
-        params: {
-          supportedCountries: [],
-        },
+        params: {},
       },
       {
         component: "VerifyOtp",
@@ -96,18 +94,6 @@ export default {
         params: { dashboard: msisdn },
       });
     },
-  },
-  async fetch() {
-    try {
-      let gettingStarted = await this.$axios.$get("/onboard/getting-started");
-
-      const firstForm = this.steps[0];
-
-      firstForm.params.supportedCountries = gettingStarted.data;
-    } catch (error) {
-      //TODO: This is a very important error that should be handled
-      console.log("Catch", error);
-    }
   },
 };
 </script>

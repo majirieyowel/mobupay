@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-form class="pt-md-2">
+    <v-form class="pt-md-2" @keyup.native.enter="submit">
       <v-row align="center">
         <v-col cols="12" sm="10" md="8" class="py-0 ml-auto">
           <v-alert color="orange" text type="info" v-if="!supported">
@@ -11,8 +11,9 @@
 
           <v-select
             v-model="form.country"
+            :loading="loadingCountry"
             ref="country"
-            :items="params.supportedCountries"
+            :items="supportedCountries"
             item-text="country"
             item-value="country"
             persistent-hint
@@ -51,14 +52,18 @@
 
 <script>
 import errorCatch from "../../functions/catchError";
+import localStorage from "../../functions/localStorage";
 
 export default {
   name: "create_user",
   emits: ["submitted"],
   data: () => ({
+    loadingCountry: false,
     submitting: false,
     supported: true,
     formHasErrors: false,
+    supportedCountries: [],
+    localStorageKey: "onboarding_data",
     form: {
       msisdn: "",
       country: "",
@@ -70,11 +75,6 @@ export default {
       country: [(v) => (v || "").length > 0 || "Select your country"],
     },
   }),
-  props: {
-    params: {
-      supportedCountries: Array,
-    },
-  },
   computed: {
     form_cast() {
       return {
@@ -117,32 +117,69 @@ export default {
     setup() {
       // Grab msisdn from query params if exist
       let query = this.$route.query;
-      if (query.p) {
+      if (this.$route.query && query.p) {
         this.form.msisdn = query.p;
       }
     },
-    async fetchIpInfo() {
-      let ipInfo = await this.$axios.$get(process.env.ipInfo);
 
-      const { country, city, region } = ipInfo;
-      this.form.city = city;
-      this.form.region = region;
+    async fetchData() {
+      let now = Date.now();
 
-      let country_code_only = this.params.supportedCountries.filter((item) => {
-        return item.country_code == country;
-      });
+      let maybeStored = localStorage.get(this.localStorageKey);
 
-      if (country_code_only.length > 0) {
-        this.form.country = country_code_only[0].country;
-      } else {
-        this.supported = false;
+      if (maybeStored.status && maybeStored.data) {
+        if (now <= maybeStored.data.time) {
+          return [maybeStored.data.gettingStarted, maybeStored.data.ipInfo];
+        }
+      }
+
+      this.loadingCountry = true;
+
+      let [gettingStarted, ipInfo] = await Promise.all([
+        this.$axios.$get("/onboard/getting-started"),
+        this.$axios.$get(process.env.ipInfo),
+      ]);
+
+      let localStorageData = {
+        gettingStarted,
+        ipInfo,
+        time: Date.now() + 21600000, // 6 hrs ahead
+      };
+
+      localStorage.save(this.localStorageKey, JSON.stringify(localStorageData));
+
+      return [gettingStarted, ipInfo];
+    },
+    async initializeData() {
+      try {
+        const [gettingStarted, ipInfo] = await this.fetchData();
+
+        this.supportedCountries = gettingStarted.data;
+
+        const { country, city, region } = ipInfo;
+        this.form.city = city;
+        this.form.region = region;
+
+        let country_code_only = this.supportedCountries.filter((item) => {
+          return item.country_code == country;
+        });
+
+        if (country_code_only.length > 0) {
+          this.form.country = country_code_only[0].country;
+        } else {
+          this.supported = false;
+        }
+      } catch (error) {
+        errorCatch(error, this);
+      } finally {
+        this.loadingCountry = false;
       }
     },
   },
 
   mounted() {
     this.setup();
-    this.fetchIpInfo();
+    this.initializeData();
   },
 };
 </script>

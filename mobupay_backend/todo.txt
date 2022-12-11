@@ -9,6 +9,7 @@ Transaction can only be initiated and completed from one device
 Transaction can be cancelled from any device
 CAPTCHA
 Enforce an expiry on passwords, after which a user must change their password also log all previous passwords so it's not reusable 
+Test if you can onboard with online SMS Service number
 
 OTHER
 Save transaction funding source data e.g Card last 4, BIN, Bank (Table already created)
@@ -24,9 +25,11 @@ Add customer ref to withdrawals
 Option to add new bank account from withdrawal page
 Add currency to transactions table
 Make onboarding password field togglable
+resend OTP while onboarding
 
 THINK OF:
-How to validate email for notifications.
+How to validate email for notifications. (I implememted this via apilayer but its not accurate/reliable)
+Integrating with Whatsapp API
 
 
 

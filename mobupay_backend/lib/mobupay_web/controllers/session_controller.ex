@@ -26,6 +26,8 @@ defmodule MobupayWeb.SessionController do
     end
   end
 
+  def login(conn, _), do: Response.error(conn, 401, "Authentication failed!")
+
   def refresh(conn, %{"refresh_token" => refresh_token}) do
     case Guardian.exchange(refresh_token, "refresh", "access") do
       {:ok, _, {new_token, new_claims}} ->

@@ -8,7 +8,7 @@ defmodule Mobupay.Services.ServicesHelper do
     with {:ok, %HTTPoison.Response{status_code: _status_code, body: body}} <-
            HTTPoison.post(endpoint, payload, headers, options),
          {:ok, json} <- Jason.decode(body) do
-      Logger.info("#{module} response: #{inspect(body)} ")
+      Logger.info("#{module} response: #{inspect(json)}")
 
       {:ok, json}
     else

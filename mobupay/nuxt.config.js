@@ -134,6 +134,10 @@ export default {
   env: {
     ipInfo: "https://ipinfo.io/json?token=7afa17ebc35a9d",
     banksListEndpoint: "https://api.paystack.co/bank",
+    version: "Beta v0.1"
+  },
+  publicRuntimeConfig: {
+    version: "Beta v0.1"
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

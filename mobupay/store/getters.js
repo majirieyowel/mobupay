@@ -17,4 +17,10 @@ export default {
   sendDialog(state) {
     return state.sendDialog;
   },
+  displayHeaderBalance(state) {
+    return state.displayHeaderBalance;
+  },
+  displayHeaderLogin(state) {
+    return state.displayHeaderLogin;
+  },
 };

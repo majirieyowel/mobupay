@@ -19,6 +19,8 @@
           </div>
         </div>
 
+        <div v-if="loadingContacts" class="cu_loader"></div>
+
         <div class="section">
           <div class="contacts">
             <div class="contact" v-for="contact in contacts" :key="contact.ref">
@@ -42,7 +44,7 @@
                       :to="{
                         name: 'dashboard-send',
                         params: { dashboard: $auth.$state.user.msisdn },
-                        query: { contact: 2348108125272 },
+                        query: { contact: contact.msisdn },
                       }"
                     >
                       <v-list-item>
@@ -244,6 +246,7 @@ export default {
     ],
   },
   data: () => ({
+    loadingContacts: true,
     saving: false,
     addContactModal: false,
     editContactModal: false,
@@ -327,7 +330,7 @@ export default {
         let contact = response.data;
 
         this.contacts.unshift(contact);
-        this.contactsDump.unshift(contact);
+        this.contactsDump.push(contact);
       } catch (error) {
         errorCatch(error, this);
       } finally {
@@ -392,12 +395,14 @@ export default {
     try {
       const contacts = await this.$axios.$get("/contact");
 
-      this.contacts = contacts.data;
-      this.contactsDump = contacts.data;
+      this.contacts = [...contacts.data];
+      this.contactsDump = [...contacts.data];
 
       this.contactsHydrated = true;
     } catch (error) {
       errorCatch(error, this);
+    } finally {
+      this.loadingContacts = false;
     }
   },
   beforeMount() {
