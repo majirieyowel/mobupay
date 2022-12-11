@@ -58,6 +58,26 @@ defmodule Mobupay.Services.Twilio do
     end
   end
 
+  @spec send_whatsapp(String.t(), String.t()) :: {:ok, any()} | {:error, any()}
+  def send_whatsapp(msisdn, message) do
+    endpoint =
+      "#{System.get_env("TWILIO_BASE_URL")}2010-04-01/Accounts/#{System.get_env("TWILIO_SID")}/Messages.json"
+
+    payload =
+      ~s{Body=#{message}&From=whatsapp:#{System.get_env("TWILIO_WHATSAPP_NUMBER")}&To=whatsapp:#{msisdn}&StatusCallback=#{System.get_env("TWILIO_WEBHOOK_URL")}}
+
+    Logger.info("Twilio: Sending message with payload: #{payload}")
+
+    case post_request(__MODULE__, endpoint, payload, headers(), request_options()) do
+      {:ok, %{"status" => "queued"}} ->
+        {:ok, :sent}
+
+      error ->
+        Logger.error("Error sending whatsapp message. Error: #{inspect(error)}")
+        {:error, "Unable to send whatsapp message at this time"}
+    end
+  end
+
   defp request_options(), do: @request_options
 
   # -----  Enable these when you have a custom header ----

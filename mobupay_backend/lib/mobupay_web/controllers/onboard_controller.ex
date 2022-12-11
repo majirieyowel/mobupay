@@ -7,7 +7,8 @@ defmodule MobupayWeb.OnboardController do
 
   require Logger
 
-  plug MobupayWeb.Plugs.ValidateHashHeader when action in [:verify_otp, :set_password]
+  plug MobupayWeb.Plugs.ValidateHashHeader
+       when action in [:verify_otp, :set_password, :resend_otp]
 
   # 10 mins
   @onboard_otp_expiration 600
@@ -179,7 +180,7 @@ defmodule MobupayWeb.OnboardController do
       Task.Supervisor.async(Mobupay.TaskSupervisor, fn ->
         message = "#{otp} is your roundup registration code."
         Logger.info(message)
-        #TODO: Handle cases where the OTP is not sent using a process.
+        # TODO: Handle cases where the OTP is not sent using a process.
         # Twilio.send(msisdn, message)
       end)
 

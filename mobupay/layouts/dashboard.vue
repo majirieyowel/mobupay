@@ -351,7 +351,7 @@ export default {
       warningTimer: null,
       countdownToLogoutInterval: null,
       warningTimerDialog: false,
-      warningTime: 4 * 1000,
+      warningTime: 600 * 1000, // 10minutes
       logoutCountDown: "",
     };
   },
@@ -378,7 +378,7 @@ export default {
     warningMessage() {
       this.warningTimerDialog = true;
 
-      this.logoutCountDown = "01:59";
+      this.logoutCountDown = "00:30";
 
       this.countdownToLogoutInterval = setInterval(() => {
         this.countdownToLogout();

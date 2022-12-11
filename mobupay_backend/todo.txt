@@ -28,7 +28,8 @@ Make onboarding password field togglable
 resend OTP while onboarding
 
 THINK OF:
-How to validate email for notifications.
+How to validate email for notifications. (I implememted this via apilayer but its not accurate/reliable)
+Integrating with Whatsapp API
 
 
 

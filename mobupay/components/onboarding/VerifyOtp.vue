@@ -3,8 +3,8 @@
     <v-row align="center">
       <v-col cols="12" sm="10" md="8" class="py-0 ml-auto">
         <v-alert color="orange" text>
-          <p class="ma-0 pa-0 text-xs-5">
-            An OTP has been sent to {{ params.msisdn }}
+          <p class="ma-0 pa-0">
+            {{ message }}
           </p>
         </v-alert>
 
@@ -18,7 +18,12 @@
           <span v-if="!showResendLink" class="wait"
             >Resend OTP in {{ counter }}</span
           >
-          <span v-else class="resend">Resend</span>
+          <span v-else>
+            <span v-if="resendingOTP" class="sending blink"
+              >Resending OTP...</span
+            >
+            <span @click="resendOTP" v-else class="resend">Resend</span>
+          </span>
         </div>
 
         <v-btn
@@ -46,10 +51,12 @@ export default {
   name: "verify_otp",
   emits: ["submitted", "mobile"],
   data: () => ({
-    length: 5,
+    message: "",
+    length: 4,
     counter: 50,
     showResendLink: false,
     loading: false,
+    resendingOTP: false,
     form: {
       msisdn: "",
       otp: "",
@@ -84,11 +91,36 @@ export default {
         this.loading = false;
       }
     },
+    async resendOTP() {
+      this.resendingOTP = true;
+
+      try {
+        await this.$axios.$post(
+          "/onboard/resend-otp",
+          { msisdn: this.params.msisdn },
+          {
+            headers: {
+              _hash: this.onboarding._hash,
+            },
+          }
+        );
+
+        this.message = `OTP resent to ${this.params.msisdn}`;
+        this.startCountDown();
+        this.resendingOTP = false;
+      } catch (error) {
+        errorCatch(error, this);
+      } finally {
+        this.resendingOTP = false;
+      }
+    },
     startCountDown() {
+      this.showResendLink = false;
       this.otpInterval = setInterval(() => {
         this.counter = --this.counter;
         if (this.counter == 0) {
           clearInterval(this.otpInterval);
+          this.counter = 50;
           this.showResendLink = true;
         }
       }, 1000);
@@ -96,6 +128,7 @@ export default {
   },
   mounted() {
     this.form.msisdn = this.params.msisdn;
+    this.message = `An OTP has been sent to ${this.params.msisdn}`;
     this.startCountDown();
 
     if (screen.width < 600) {
@@ -105,8 +138,25 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .hero-form .hero-form__btn {
   color: #fff;
+}
+
+.wait,
+.resend,
+.sending {
+  font-size: 12px;
+}
+.wait {
+}
+.resend {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #fea437;
+}
+
+.resend-otp {
+  text-align: right;
 }
 </style>

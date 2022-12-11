@@ -88,6 +88,14 @@ a {
 }
 
 
+.password--guide {
+
+  .v-input--selection-controls {
+    margin-top: 0px;
+
+}
+}
+
 /** Loader **/
 .cu_loader,
 .cu_loader:after {
@@ -126,5 +134,16 @@ a {
   100% {
     -webkit-transform: rotate(360deg);
     transform: rotate(360deg);
+  }
+}
+
+/** Blinking text **/
+.blink {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
   }
 }
