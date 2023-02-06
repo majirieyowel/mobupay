@@ -10,7 +10,7 @@ defmodule MobupayWhatsapp.Type do
         }
 
   @type webhook_media :: %{
-          media_url: String.t(),
+          contact_url: String.t(),
           msisdn: String.t(),
           profile_name: String.t()
         }

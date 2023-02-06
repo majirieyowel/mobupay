@@ -10,6 +10,7 @@ defmodule Mobupay.Whatsapp.State do
     field :has_onboarded, :boolean, default: false
     field :state, :string
     field :state_action, :string
+    field :language, :string
     field :state_param, :map
     field :state_action_expiration, :utc_datetime
 
@@ -25,6 +26,7 @@ defmodule Mobupay.Whatsapp.State do
       :has_onboarded,
       :state,
       :state_action,
+      :language,
       :state_param,
       :state_action_expiration
     ])

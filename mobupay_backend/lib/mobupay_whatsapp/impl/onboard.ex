@@ -1,54 +1,104 @@
 defmodule MobupayWhatsapp.Impl.Onboard do
-  alias MobupayWhatsapp.Type
-  alias Mobupay.Whatsapp
-  alias Mobupay.Services.{Twilio, Mailgun}
+  alias Mobupay.Account
 
-  import MobupayWhatsapp.Impl.Response, only: [invalid_command: 1]
+  import MobupayWhatsapp.Helpers
 
-  # when user is onboarding for the first time
-  @spec handle(Type.webhook_message(), nil) :: :ok
-  def handle(
-        %{
-          msisdn: msisdn,
-          profile_name: profile_name
-        },
-        nil
-      ) do
-    # create new state without email
-    Whatsapp.create(%{
-      msisdn: msisdn,
-      state: "onboarding",
-      state_action: "awaiting_email"
-    })
+  alias Mobupay.Helpers.Token
 
-    message = ~s"""
-    Hello #{profile_name} 👋🏾, \n
-    Welcome to Mobupay. \r
-    With Mobupay you can send and recieve money from any Whatsapp contact, amazing right? 🤩 \r
-    To learn more about how mobupay works, watch this short video: https://youtu.be/dQw4w9WgXcQ \n
-    *To get started, send us your email address below*  \n\n
-    Lets gooooo 🚀
-    """
+  alias Mobupay.Services.Mailgun
 
-    Twilio.send_whatsapp(msisdn, message)
+  def verify_email(conn, token) do
+    state = Account.get_state_by_confirmation_token(token)
 
-    :ok
+    case state do
+      %Account.User{
+        msisdn: msisdn,
+        state_action: "awaiting_email_confirmation",
+        email: email,
+        language: language
+      } ->
+        Account.update(state, %{
+          email_confirmation_token: nil,
+          state: "idle",
+          state_action: nil
+        })
+
+        message = lang(language, "onboarding", :email_verified, [email])
+
+        Mobupay.Services.Twilio.send_whatsapp(msisdn, message)
+
+        verify_email_http_response(conn, %{
+          confirmed: true
+        })
+
+      _ ->
+        verify_email_http_response(conn, %{
+          confirmed: false
+        })
+    end
   end
 
-  # user is supposed to send their email here
+  # when user is onboarding for the first time
+  def handle(%{msisdn: msisdn}, nil) do
+    # create new state without email
+    Account.create(%{
+      msisdn: msisdn,
+      ref: Token.generate_unique(:user_ref),
+      state: "onboarding",
+      state_action: "select_language"
+    })
+
+    prompt_langage(msisdn)
+  end
+
+  # User us supposed to select a language here
   def handle(
         %{
           msisdn: msisdn,
           message: message,
           profile_name: profile_name
         } = params,
-        %{state: "onboarding", state_action: "awaiting_email"} = state
+        %{state: "onboarding", state_action: "select_language"} = state
+      ) do
+    cond do
+      message == "1" || message == "english" ->
+        {:ok, %Account.User{language: language}} =
+          Account.update(state, %{
+            language: "english",
+            state_action: "awaiting_email"
+          })
+
+        message = lang(language, "onboarding", :welcome_message, [profile_name])
+        whatsapp_feedback(msisdn, message)
+
+      message == "2" || message == "yoruba" ->
+        {:ok, %Account.User{language: language}} =
+          Account.update(state, %{
+            language: "yoruba",
+            state_action: "awaiting_email"
+          })
+
+        message = lang(language, "onboarding", :welcome_message, [profile_name])
+        whatsapp_feedback(msisdn, message)
+
+      true ->
+        prompt_langage(msisdn)
+    end
+  end
+
+  # user is supposed to enter email here:
+  def handle(
+        %{
+          msisdn: msisdn,
+          message: message
+        },
+        %{state: "onboarding", state_action: "awaiting_email", language: language} = state
       ) do
     case get_email_from_message(message) do
       [email | _tail] ->
         token = UUID.uuid1()
 
-        Whatsapp.update(state, %{
+        Account.update(state, %{
           email: email,
           email_confirmation_token: token,
           state_action: "awaiting_email_confirmation"
@@ -59,35 +109,20 @@ defmodule MobupayWhatsapp.Impl.Onboard do
           "verification_link" => "#{System.get_env("MOBUPAY_FRONTEND_URL")}email-confirm/#{token}"
         })
 
-        message = ~s"""
-        Almost done #{profile_name}, \n
-        A verification link has been sent to your email: *#{email}* \r
-        Please verify your email so we know it's you. \n
+        message = lang(language, "onboarding", :email_verification_sent, [email])
 
-        (_respond with number_)
-        1. Resend verification link \r
-        2. Use another email \r
-
-        """
-
-        Twilio.send_whatsapp(msisdn, message)
+        whatsapp_feedback(msisdn, message)
 
       nil ->
-        options_list = [
-          "Please reply with your email address to proceed. we need this to notify you of transactions.",
-          "Your email address is required for the next steps.",
-          "Please enter your email address below."
-        ]
+        message = lang(language, "onboarding", :email_required_prompt, [])
 
-        message = "#{Enum.random(options_list)}"
-
-        Twilio.send_whatsapp(msisdn, message)
+        whatsapp_feedback(msisdn, message)
     end
 
     :ok
   end
 
-  # Use options after on awaiting verification message
+  # User options for commands while awaiting email confirmation trigger
   def handle(
         %{
           msisdn: msisdn,
@@ -98,10 +133,11 @@ defmodule MobupayWhatsapp.Impl.Onboard do
           state: "onboarding",
           email: email,
           email_confirmation_token: token,
-          state_action: "awaiting_email_confirmation"
+          state_action: "awaiting_email_confirmation",
+          language: language
         } = state
       ) do
-    mesage = String.trim(message)
+    message = String.trim(message)
 
     cond do
       message == "1" ->
@@ -111,29 +147,47 @@ defmodule MobupayWhatsapp.Impl.Onboard do
           "verification_link" => "#{System.get_env("MOBUPAY_FRONTEND_URL")}email-confirm/#{token}"
         })
 
-        resp_message = ~s"""
-        The verification link has been resent!. Please check your mail: #{email}
-        """
+        resp_message = lang(language, "onboarding", :verification_link_resent, [email])
 
-        Twilio.send_whatsapp(msisdn, resp_message)
+        whatsapp_feedback(msisdn, resp_message)
 
       message == "2" ->
         # use another email
-        Whatsapp.update(state, %{
+        Account.update(state, %{
           state_action: "awaiting_email"
         })
 
-        resp_message = ~s"""
-        Please enter another email you will like to use
-        """
+        resp_message = lang(language, "onboarding", :new_email_to_use, [email])
 
-        Twilio.send_whatsapp(msisdn, resp_message)
+        whatsapp_feedback(msisdn, resp_message)
 
       true ->
-        invalid_command(msisdn)
+        resp_message = lang(language, "onboarding", :verify_email_remind, [email])
+
+        whatsapp_feedback(msisdn, resp_message)
     end
 
     :ok
+  end
+
+  defp prompt_langage(msisdn) do
+    message = ~s"""
+    Select a language
+
+    1. English
+    2. Yoruba
+    3. Hausa
+    4. Igbo
+    """
+
+    whatsapp_feedback(msisdn, message)
+  end
+
+  defp verify_email_http_response(conn, data) do
+    conn
+    |> Plug.Conn.put_status(:ok)
+    |> Plug.Conn.put_resp_content_type("application/json")
+    |> Phoenix.Controller.json(data)
   end
 
   defp get_email_from_message(message),

@@ -2,7 +2,7 @@ defmodule Mobupay.Account.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Mobupay.Account.{BankAccount, Contact, Card, Withdrawal}
+  alias Mobupay.Account.{BankAccount, Card, Withdrawal}
 
   @mail_regex ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/
 
@@ -22,6 +22,10 @@ defmodule Mobupay.Account.User do
 
   schema "users" do
     field :email, :string
+
+    field :email_confirmation_token, :string
+    field :email_confirmed_at, :utc_datetime
+
     field :msisdn, :string
     field :country, :string
     field :currency, :string
@@ -34,31 +38,53 @@ defmodule Mobupay.Account.User do
     field :hashed_password, :string, redact: true
     field :balance, :string, virtual: true
 
+    field :state, :string
+    field :state_action, :string
+    field :state_param, :map
+    field :state_action_expiration, :utc_datetime
+    field :language, :string
+    field :has_onboarded, :boolean, default: false
+
     has_many(:bank_accounts, BankAccount)
     has_many(:cards, Card)
-    has_many(:contacts, Contact)
     has_many(:withdrawals, Withdrawal)
-    has_many(:businesses, Withdrawal)
 
     timestamps()
   end
 
-  @doc false
-  def partial_onboarding_changeset(user, attrs) do
+    def changeset(user, attrs) do
     user
-    |> cast(attrs, [:msisdn, :country, :city, :region])
-    |> validate_required_onboarding()
-    |> validate_msisdn()
+    |> cast(attrs, [
+      :email,
+      :email_confirmation_token,
+      :msisdn,
+      :ref,
+      :has_onboarded,
+      :state,
+      :state_action,
+      :language,
+      :state_param,
+      :state_action_expiration
+    ])
+    |> validate_required([:msisdn, :state])
   end
 
-  def full_onboarding_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:msisdn, :country, :currency, :city, :region, :ref, :password])
-    |> validate_required([:msisdn, :country, :ref, :password])
-    |> validate_password
-    |> encrypt_and_put_password()
-    |> validate_msisdn()
-  end
+  @doc false
+  # def partial_onboarding_changeset(user, attrs) do
+  #   user
+  #   |> cast(attrs, [:msisdn, :country, :city, :region])
+  #   |> validate_required_onboarding()
+  #   |> validate_msisdn()
+  # end
+
+  # def full_onboarding_changeset(user, attrs) do
+  #   user
+  #   |> cast(attrs, [:msisdn, :country, :currency, :city, :region, :ref, :password])
+  #   |> validate_required([:msisdn, :country, :ref, :password])
+  #   |> validate_password
+  #   |> encrypt_and_put_password()
+  #   |> validate_msisdn()
+  # end
 
   def save_email_changeset(user, attrs) do
     user

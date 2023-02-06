@@ -33,3 +33,71 @@ Integrating with Whatsapp API
 
 
 
+
+
+
+  # TODO sanitize message body using plug
+  # TODO: mainenance mode plug
+  # TODO: Trim emojis and others
+  # TODO: Messages to lowercase
+
+  # def test(url) do
+  #   {:ok, %HTTPoison.Response{body: body}} =
+  #     HTTPoison.get(
+  #       url,
+  #       [],
+  #       follow_redirect: true
+  #     )
+
+  #   # "BEGIN:VCARD\r\nVERSION:3.0\r\nPRODID:ez-vcard 0.10.6\r\nFN:Feyi Abioye\r\nN:Abioye;Feyi\r\nORG:\r\nTEL;TYPE=cell:+234 807 909 7910\r\nTEL;TYPE=home:+234 807 909 7911\r\nEND:VCARD\r"
+  #   contact_data =
+  #     body
+  #     |> String.split("\r\n")
+
+  #   contact_name =
+  #     contact_data
+  #     |> Enum.filter(fn index -> String.starts_with?(index, "FN:") end)
+  #     |> Enum.map(fn index ->
+  #       [_fn | [name]] = String.split(index, ":")
+  #       name
+  #     end)
+
+  #   tel_numbers =
+  #     contact_data
+  #     |> Enum.filter(fn index -> String.starts_with?(index, "TEL") end)
+  #     |> Enum.map(fn index ->
+  #       [_useless | [msisdn]] = String.split(index, ":")
+
+  #       msisdn
+  #       |> String.replace(~r/\s+/, "")
+  #     end)
+
+  #   [name] = contact_name
+
+  #   %{
+  #     name: name,
+  #     tels: tel_numbers
+  #   }
+  # end
+
+  # def index(conn, %{"WaId" => msisdn} = params) do
+  #   email = "majirieyowel@gmail.com"
+  #   profile_name = "Mj"
+
+  #   message = ~s"""
+  #   Almost done #{profile_name}, \n
+  #   A verification link has been sent to your email: *#{email}* \r
+  #   Please verify your email so we know it's you. \n
+  #   (_respond with number_)
+  #   1. Resend verification link \r
+  #   2. Use another email \r
+  #   """
+  #   Mobupay.Services.Twilio.send_whatsapp(msisdn, message)
+
+  #   conn
+  #   |> put_status(:ok)
+  #   |> put_resp_content_type("application/json")
+  #   |> json(%{
+  #     status: "ok"
+  #   })
+  # end

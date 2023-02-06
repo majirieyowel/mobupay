@@ -9,6 +9,26 @@ defmodule Mobupay.Account do
   alias Mobupay.Account.{User, BankAccount, Contact, Card, Withdrawal}
   alias Mobupay.Helpers.Token
 
+  def create(params) do
+    %User{}
+    |> User.changeset(params)
+    |> Repo.insert()
+  end
+
+  def update(user, attrs) do
+    user
+    |> User.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def get_by_msisdn(msisdn) do
+    User
+    |> where([u], u.msisdn == ^msisdn)
+    |> Repo.one()
+  end
+
+  ################## Old codebase
+
   @spec partial_onboard(%{optional(:__struct__) => none, optional(atom | binary) => any}) ::
           Ecto.Changeset.t()
   def partial_onboard(%{"msisdn" => _msisdn} = user_params) do
@@ -24,11 +44,11 @@ defmodule Mobupay.Account do
 
   def get_user!(id), do: Repo.get!(User, id)
 
-  def get_by_msisdn(msisdn) do
-    User
-    |> where([user], user.msisdn == ^msisdn)
-    |> Repo.one()
-  end
+  # def get_by_msisdn(msisdn) do
+  #   User
+  #   |> where([user], user.msisdn == ^msisdn)
+  #   |> Repo.one()
+  # end
 
   def save_email(user, attrs) do
     user

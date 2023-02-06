@@ -16,10 +16,10 @@ defmodule MobupayWeb.Router do
 
   scope "/api/v1", MobupayWhatsapp, as: :v1 do
     pipe_through(:api)
-    
-    post("/incoming/e0dd36d8-3232-45f8-8af2-647215ddee5c", Entrypoint, :index)
+
+    post("/incoming/e0dd36d8-3232-45f8-8af2-647215ddee5c", Entrypoint, :start)
     post("/verify-whatsapp-email", Entrypoint, :verify_email)
-    post("/callback", Callback, :index)
+    # post("/callback", Callback, :index)
   end
 
   scope "/api/v1", MobupayWeb, as: :v1 do
