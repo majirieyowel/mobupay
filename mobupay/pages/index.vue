@@ -3,13 +3,12 @@
     <v-col class="pa-md-0" cols="12" sm="6" v-if="showHeroSection">
       <div class="hero">
         <h1 class="hero__title mb-5">
-          Send money <br />
-          to any valid mobile number
+          Send and receive money from any
+          <span class="hero_whatsapp">whatsapp number </span>
         </h1>
         <p class="hero_subtitle text-left">
-          Mobupay is the easiest place to use your phone number to send and
-          receive money, pay bills and create invoices. Sign up and get started
-          today.
+          Introducing a new way of sending/receiving money, with mobupay you can securely
+          send money declaratively to any registered whatsapp number.
         </p>
       </div>
     </v-col>
@@ -36,6 +35,11 @@
 <script>
 export default {
   name: "home",
+  head() {
+    return {
+      title: "Mobupay - Home",
+    };
+  },
   data: () => ({
     currentStep: 0,
     showHeroSection: true,
@@ -129,6 +133,10 @@ export default {
 
     .hero_subtitle {
       font-size: 18px;
+    }
+
+    .hero_whatsapp {
+      color: #24d366;
     }
   }
 }
